@@ -1,0 +1,54 @@
+# Battery Manufacturing taxonomy: processes and equipment.
+
+processes:
+  - mixing
+  - coating
+  - drying
+  - calendering
+  - slitting
+  - stacking
+  - winding
+  - welding
+  - electrolyte_filling
+  - formation
+  - aging
+  - inspection
+  - module
+  - pack
+  - automation
+  - utilities
+
+equipment:
+  - motor
+  - pump
+  - compressor
+  - roller
+  - coater
+  - conveyor
+  - robot
+  - vision_system
+  - hvac
+  - dry_room
+  - vacuum_system
+  - servo
+  - bearing
+  - plc
+
+# keyword hints used by the rule-based classifier / battery-relevance scorer
+keywords:
+  mixing: ["slurry", "mixing", "binder", "nmp", "electrode slurry"]
+  coating: ["coating", "coater", "die coating", "slot die"]
+  drying: ["drying", "oven", "solvent removal"]
+  calendering: ["calendering", "calender", "roll press", "rolling mill"]
+  slitting: ["slitting", "slitter", "edge trim"]
+  stacking: ["stacking", "z-stacking", "notching"]
+  winding: ["winding", "jelly roll", "wound cell"]
+  welding: ["welding", "laser welding", "ultrasonic welding", "tab welding"]
+  electrolyte_filling: ["electrolyte filling", "electrolyte injection", "degassing"]
+  formation: ["formation", "化成", "formation cycling", "chemical activation"]
+  aging: ["aging", "cell aging", "storage test"]
+  inspection: ["inspection", "vision inspection", "defect detection", "x-ray inspection"]
+  module: ["module assembly", "battery module"]
+  pack: ["battery pack", "pack assembly"]
+  automation: ["plc", "robot", "automation line", "conveyor"]
+  utilities: ["dry room", "hvac", "vacuum system", "utility"]

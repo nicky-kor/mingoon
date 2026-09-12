@@ -1,0 +1,94 @@
+# Technology taxonomy (AI / Industrial AI methods).
+# keywords are used by the rule-based classifier fallback.
+
+technologies:
+  - id: machine_learning
+    name: "Machine Learning"
+    keywords: ["machine learning", "supervised learning", "unsupervised learning"]
+  - id: deep_learning
+    name: "Deep Learning"
+    keywords: ["deep learning", "neural network", "cnn", "rnn"]
+  - id: generative_ai
+    name: "Generative AI"
+    keywords: ["generative ai", "diffusion model", "gan", "generative model"]
+  - id: llm
+    name: "LLM"
+    keywords: ["large language model", "llm", "language model"]
+  - id: multimodal_ai
+    name: "Multimodal AI"
+    keywords: ["multimodal", "vision-language"]
+  - id: computer_vision
+    name: "Computer Vision"
+    keywords: ["computer vision", "image classification", "object detection", "segmentation"]
+  - id: time_series_ai
+    name: "Time Series AI"
+    keywords: ["time series", "temporal", "forecasting"]
+  - id: transformer
+    name: "Transformer"
+    keywords: ["transformer", "attention mechanism", "self-attention"]
+  - id: anomaly_detection
+    name: "Anomaly Detection"
+    keywords: ["anomaly detection", "outlier detection", "novelty detection"]
+  - id: fault_diagnosis
+    name: "Fault Diagnosis"
+    keywords: ["fault diagnosis", "fault detection", "root cause"]
+  - id: predictive_maintenance
+    name: "Predictive Maintenance"
+    keywords: ["predictive maintenance", "condition-based maintenance"]
+  - id: rul
+    name: "RUL"
+    keywords: ["remaining useful life", "rul estimation", "rul prediction"]
+  - id: digital_twin
+    name: "Digital Twin"
+    keywords: ["digital twin", "virtual replica", "simulation twin"]
+  - id: reinforcement_learning
+    name: "Reinforcement Learning"
+    keywords: ["reinforcement learning", "policy gradient", "q-learning"]
+  - id: optimization
+    name: "Optimization"
+    keywords: ["optimization", "process optimization", "hyperparameter optimization"]
+  - id: bayesian_methods
+    name: "Bayesian Methods"
+    keywords: ["bayesian", "gaussian process", "probabilistic model"]
+  - id: physics_informed_ml
+    name: "Physics-Informed ML"
+    keywords: ["physics-informed", "physics-guided", "pinn"]
+  - id: edge_ai
+    name: "Edge AI"
+    keywords: ["edge ai", "edge inference", "on-device inference"]
+  - id: industrial_iot
+    name: "Industrial IoT"
+    keywords: ["industrial iot", "iiot", "sensor network"]
+  - id: sensor_fusion
+    name: "Sensor Fusion"
+    keywords: ["sensor fusion", "multi-sensor", "data fusion"]
+  - id: robotics
+    name: "Robotics"
+    keywords: ["robotics", "robotic arm", "manipulator"]
+  - id: vision_inspection
+    name: "Vision Inspection"
+    keywords: ["vision inspection", "visual inspection", "defect inspection"]
+  - id: process_control
+    name: "Process Control"
+    keywords: ["process control", "pid control", "control loop"]
+  - id: fdc
+    name: "FDC"
+    keywords: ["fault detection and classification", "fdc"]
+  - id: spc
+    name: "SPC"
+    keywords: ["statistical process control", "spc", "control chart"]
+  - id: mlops
+    name: "MLOps"
+    keywords: ["mlops", "model deployment", "ml pipeline"]
+  - id: data_engineering
+    name: "Data Engineering"
+    keywords: ["data engineering", "etl", "data pipeline"]
+  - id: knowledge_graph
+    name: "Knowledge Graph"
+    keywords: ["knowledge graph", "ontology", "graph database"]
+  - id: agentic_ai
+    name: "Agentic AI"
+    keywords: ["agentic ai", "ai agent", "multi-agent", "autonomous agent"]
+  - id: ai_automation
+    name: "AI Automation"
+    keywords: ["ai automation", "workflow automation", "intelligent automation"]

@@ -1,0 +1,28 @@
+# Agent registry: which agents exist, whether enabled, and short description.
+# Model tier assignment lives in config/routing.yaml, not here.
+
+agents:
+  - name: DiscoveryAgent
+    enabled: true
+    description: "Finds new research and technology from configured sources."
+  - name: ClassifierAgent
+    enabled: true
+    description: "Classifies documents into Industry x Technology x Problem."
+  - name: SummarizerAgent
+    enabled: true
+    description: "Produces technical summaries (problem/method/result/limitation/application)."
+  - name: AnalystAgent
+    enabled: true
+    description: "Assesses technical significance, novelty, applicability, evidence quality."
+  - name: TransferAgent
+    enabled: true
+    description: "Evaluates cross-industry technology transfer potential to Battery Manufacturing."
+  - name: TrendAgent
+    enabled: true
+    description: "Detects recurring/emerging technologies and shifting research direction."
+  - name: ResearchAgent
+    enabled: true
+    description: "Performs deep research over a specific question."
+  - name: BriefingAgent
+    enabled: true
+    description: "Generates daily/weekly briefing reports."

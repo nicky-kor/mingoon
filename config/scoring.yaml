@@ -1,0 +1,15 @@
+# Scoring weights (must sum to 1.0) and priority thresholds.
+
+weights:
+  battery_relevance: 0.25
+  transferability: 0.20
+  evidence_quality: 0.20
+  practical_applicability: 0.20
+  novelty: 0.15
+
+priority_thresholds:
+  critical: 90
+  high: 75
+  medium: 60
+  low: 40
+  # below `low` => archive

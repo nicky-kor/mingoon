@@ -1,0 +1,38 @@
+# ============================================================
+# Default agent -> model tier policy.
+# This is an initial policy only; the ModelRouter may override it based on
+# task_type/complexity/importance/latency/cost/privacy and, in the future,
+# model benchmark results (see config/models.yaml and the evaluation lab).
+# ============================================================
+
+agent_defaults:
+  DiscoveryAgent: local_fast
+  ClassifierAgent: local_fast
+  SummarizerAgent: local_standard
+  AnalystAgent: cloud_reasoning
+  TransferAgent: cloud_reasoning
+  TrendAgent: local_standard
+  ResearchAgent: cloud_deep_research
+  BriefingAgent: cloud_reasoning
+
+# Routing rules evaluated in order; first match wins. `default_tier` is used
+# if nothing matches. Complexity/importance are 0-100 scales.
+rules:
+  - when: {privacy_level: "restricted"}
+    prefer_local: true
+  - when: {task_type: "classification", complexity: "low"}
+    tier: local_fast
+  - when: {task_type: "summarization", complexity: "medium"}
+    tier: local_standard
+  - when: {task_type: "deep_research"}
+    tier: cloud_deep_research
+  - when: {reasoning_required: true, importance_gte: 70}
+    tier: cloud_reasoning
+
+default_tier: local_fast
+
+budgets:
+  latency_low_ms: 3000
+  latency_high_ms: 30000
+  cost_low_usd: 0.01
+  cost_high_usd: 0.50

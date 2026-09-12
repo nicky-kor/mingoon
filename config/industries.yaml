@@ -1,0 +1,72 @@
+# Industry taxonomy. Battery Manufacturing is the primary domain (priority 5).
+# Priority scale: 5 = highest attention, 1 = lowest.
+
+industries:
+  - id: battery_manufacturing
+    name: "Battery Manufacturing"
+    priority: 5
+    primary: true
+
+  - id: semiconductor
+    name: "Semiconductor"
+    priority: 4
+
+  - id: automotive
+    name: "Automotive"
+    priority: 4
+
+  - id: steel
+    name: "Steel"
+    priority: 3
+
+  - id: chemical
+    name: "Chemical"
+    priority: 3
+
+  - id: petrochemical
+    name: "Petrochemical"
+    priority: 3
+
+  - id: energy
+    name: "Energy"
+    priority: 3
+
+  - id: power_generation
+    name: "Power Generation"
+    priority: 3
+
+  - id: shipbuilding
+    name: "Shipbuilding"
+    priority: 2
+
+  - id: machinery
+    name: "Machinery"
+    priority: 2
+
+  - id: aerospace
+    name: "Aerospace"
+    priority: 2
+
+  - id: food
+    name: "Food"
+    priority: 2
+
+  - id: pharmaceutical
+    name: "Pharmaceutical"
+    priority: 2
+
+  - id: general_manufacturing
+    name: "General Manufacturing"
+    priority: 2
+
+  - id: logistics
+    name: "Logistics"
+    priority: 1
+
+  - id: mining
+    name: "Mining"
+    priority: 1
+
+  - id: other
+    name: "Other"
+    priority: 1

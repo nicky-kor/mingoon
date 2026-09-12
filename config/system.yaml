@@ -1,0 +1,77 @@
+# ============================================================
+# Manufacturing AI Research OS - System Configuration
+# ============================================================
+
+system:
+  name: "Manufacturing AI Research OS"
+  version: "0.1.0"
+  timezone: "Asia/Seoul"
+
+paths:
+  database: "data/database/research_os.db"
+  raw: "data/raw"
+  processed: "data/processed"
+  knowledge: "data/knowledge"
+  reports: "data/reports"
+  logs: "logs"
+
+logging:
+  level: "INFO"
+  file: "logs/research_os.log"
+  max_bytes: 5242880
+  backup_count: 5
+
+sources:
+  arxiv:
+    enabled: true
+    base_url: "${ARXIV_BASE_URL:-http://export.arxiv.org/api/query}"
+    categories:
+      - "cs.AI"
+      - "cs.LG"
+      - "cs.CV"
+      - "cs.RO"
+      - "stat.ML"
+    max_results_per_run: 25
+  rss:
+    enabled: false
+    feeds: []
+  github:
+    enabled: false
+    api_url: "https://api.github.com/search/repositories"
+    topics:
+      - "industrial AI"
+      - "manufacturing AI"
+      - "predictive maintenance"
+      - "anomaly detection"
+      - "fault diagnosis"
+      - "digital twin"
+      - "computer vision manufacturing"
+      - "battery manufacturing AI"
+      - "time series AI"
+      - "agentic AI"
+
+pipeline:
+  stages:
+    - collect
+    - normalize
+    - deduplicate
+    - classify
+    - extract
+    - summarize
+    - score
+    - battery_relevance
+    - transfer_analysis
+    - store
+    - report
+
+privacy:
+  default_level: "public"
+  cloud_allowed:
+    public: true
+    personal: true
+    restricted: false
+
+cost_control:
+  cache_llm_responses: true
+  max_retries: 2
+  daily_cloud_call_budget: 200

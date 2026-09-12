@@ -1,0 +1,60 @@
+# Industrial problem taxonomy.
+
+problems:
+  - id: anomaly_detection
+    name: "Anomaly Detection"
+    keywords: ["anomaly detection", "abnormal behavior"]
+  - id: fault_detection
+    name: "Fault Detection"
+    keywords: ["fault detection"]
+  - id: fault_diagnosis
+    name: "Fault Diagnosis"
+    keywords: ["fault diagnosis", "root cause analysis"]
+  - id: prediction
+    name: "Prediction"
+    keywords: ["prediction", "forecasting"]
+  - id: rul_estimation
+    name: "RUL Estimation"
+    keywords: ["remaining useful life"]
+  - id: quality_prediction
+    name: "Quality Prediction"
+    keywords: ["quality prediction", "defect prediction"]
+  - id: yield_improvement
+    name: "Yield Improvement"
+    keywords: ["yield improvement", "yield optimization"]
+  - id: process_optimization
+    name: "Process Optimization"
+    keywords: ["process optimization"]
+  - id: energy_optimization
+    name: "Energy Optimization"
+    keywords: ["energy optimization", "energy efficiency"]
+  - id: equipment_optimization
+    name: "Equipment Optimization"
+    keywords: ["equipment optimization"]
+  - id: root_cause_analysis
+    name: "Root Cause Analysis"
+    keywords: ["root cause analysis"]
+  - id: process_monitoring
+    name: "Process Monitoring"
+    keywords: ["process monitoring"]
+  - id: condition_monitoring
+    name: "Condition Monitoring"
+    keywords: ["condition monitoring"]
+  - id: inspection
+    name: "Inspection"
+    keywords: ["inspection", "defect detection"]
+  - id: automation
+    name: "Automation"
+    keywords: ["automation"]
+  - id: scheduling
+    name: "Scheduling"
+    keywords: ["scheduling", "production scheduling"]
+  - id: maintenance_planning
+    name: "Maintenance Planning"
+    keywords: ["maintenance planning"]
+  - id: knowledge_management
+    name: "Knowledge Management"
+    keywords: ["knowledge management"]
+  - id: decision_support
+    name: "Decision Support"
+    keywords: ["decision support"]

@@ -1,0 +1,77 @@
+# ============================================================
+# Model Tiers and Provider bindings.
+# Actual model names live here, never hardcoded in Python.
+# ============================================================
+
+providers:
+  ollama:
+    kind: "local"
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+  llama_cpp:
+    kind: "local"
+    base_url: "${LLAMA_CPP_BASE_URL:-http://localhost:8080}"
+  vllm:
+    kind: "local"
+    base_url: "${VLLM_BASE_URL:-http://localhost:8000}"
+  anthropic:
+    kind: "cloud"
+    api_key_env: "ANTHROPIC_API_KEY"
+  openai:
+    kind: "cloud"
+    api_key_env: "OPENAI_API_KEY"
+  google:
+    kind: "cloud"
+    api_key_env: "GOOGLE_API_KEY"
+
+# Model tiers: conceptual capability levels. Real model IDs are configurable
+# so they can be changed as new local/cloud models become available without
+# touching code.
+tiers:
+  local_fast:
+    provider: ollama
+    model: "qwen2.5:3b-instruct"
+  local_standard:
+    provider: ollama
+    model: "qwen2.5:7b-instruct"
+  local_reasoning:
+    provider: ollama
+    model: "deepseek-r1:7b"
+  cloud_fast:
+    provider: anthropic
+    model: "claude-haiku-4-5-20251001"
+  cloud_standard:
+    provider: anthropic
+    model: "claude-sonnet-5"
+  cloud_reasoning:
+    provider: anthropic
+    model: "claude-opus-5"
+  cloud_deep_research:
+    provider: anthropic
+    model: "claude-opus-5"
+  embedding:
+    provider: ollama
+    model: "nomic-embed-text"
+  reranker:
+    provider: ollama
+    model: "bge-reranker-base"
+
+# Escalation chain used by the ModelRouter when a lower tier is insufficient
+# or unavailable. Cheap/local -> Standard -> Reasoning -> Deep Research.
+escalation:
+  local_fast: [local_standard, cloud_fast]
+  local_standard: [local_reasoning, cloud_standard]
+  local_reasoning: [cloud_reasoning]
+  cloud_fast: [cloud_standard]
+  cloud_standard: [cloud_reasoning]
+  cloud_reasoning: [cloud_deep_research]
+
+# Fallback chain used purely for availability failures (e.g. Ollama down),
+# independent of escalation-for-difficulty above.
+fallback:
+  local_fast: [cloud_fast]
+  local_standard: [cloud_standard]
+  local_reasoning: [cloud_reasoning]
+  cloud_fast: [cloud_standard]
+  cloud_standard: [cloud_reasoning]
+  cloud_reasoning: [cloud_deep_research]
+  cloud_deep_research: []
