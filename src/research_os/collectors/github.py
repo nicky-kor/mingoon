@@ -31,7 +31,7 @@ class GitHubCollector(Collector):
         timeout: float = 20.0,
     ) -> None:
         cfg = system_config().get("sources", {}).get("github", {})
-        self.topics = topics or cfg.get("topics", [])
+        self.topics = topics if topics is not None else cfg.get("topics", [])
         self.api_url = api_url or cfg.get("api_url", "https://api.github.com/search/repositories")
         self.per_topic_limit = per_topic_limit
         self.timeout = timeout

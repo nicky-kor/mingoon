@@ -41,6 +41,21 @@ def test_arxiv_collector_parses_entries(monkeypatch):
     assert "anomaly detection" in item["abstract"].lower()
 
 
+def test_arxiv_collector_with_empty_categories_makes_no_network_call(monkeypatch):
+    # Regression guard: categories=[] must mean "search nothing", not
+    # silently fall back to config/system.yaml's default categories (the
+    # same class of bug found in GitHubCollector — see
+    # tests/test_collectors_github.py).
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("ArxivCollector made a network call despite categories=[]")
+
+    monkeypatch.setattr(arxiv_module.httpx, "get", fail_if_called)
+
+    collector = arxiv_module.ArxivCollector(categories=[])
+    assert collector.categories == []
+    assert collector.collect() == []
+
+
 def test_arxiv_collector_run_never_raises_on_network_error(monkeypatch):
     def fake_get(url, params=None, timeout=None):
         raise ConnectionError("network down")

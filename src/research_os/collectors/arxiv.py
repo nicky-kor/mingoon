@@ -32,8 +32,8 @@ class ArxivCollector(Collector):
         max_retries: int = 2,
     ) -> None:
         cfg = system_config().get("sources", {}).get("arxiv", {})
-        self.categories = categories or cfg.get("categories", ["cs.AI"])
-        self.max_results = max_results or cfg.get("max_results_per_run", 25)
+        self.categories = categories if categories is not None else cfg.get("categories", ["cs.AI"])
+        self.max_results = max_results if max_results is not None else cfg.get("max_results_per_run", 25)
         self.base_url = base_url or cfg.get("base_url", "http://export.arxiv.org/api/query")
         self.timeout = timeout
         self.max_retries = max_retries
@@ -68,6 +68,8 @@ class ArxivCollector(Collector):
         return tail.split("v")[0] if "v" in tail and tail.split("v")[-1].isdigit() else tail
 
     def collect(self) -> list[dict[str, Any]]:
+        if not self.categories:
+            return []
         raw_xml = self._fetch()
         feed = feedparser.parse(raw_xml)
         if getattr(feed, "bozo", 0) and not feed.entries:
