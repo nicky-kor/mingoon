@@ -11,10 +11,12 @@ from __future__ import annotations
 import time
 
 from research_os.core.logging_setup import get_logger
+from research_os.core.resource_probe import gpu_vram_usage_mb, process_ram_mb
 from research_os.database.db import session_scope
 from research_os.database.models import LLMRun
 from research_os.models.anthropic import AnthropicAdapter
 from research_os.models.base import GenerationRequest, GenerationResult, ModelUnavailableError, ProviderAdapter
+from research_os.models.cache import compute_cache_key, get_cached, store_cached
 from research_os.models.google import GoogleAdapter
 from research_os.models.local import OllamaAdapter
 from research_os.models.openai import OpenAIAdapter
@@ -41,7 +43,10 @@ class ModelGateway:
     def register_adapter(self, name: str, adapter: ProviderAdapter) -> None:
         self._adapters[name] = adapter
 
-    def _log(self, agent, task, tier, model, provider, latency_ms, result, status, error) -> None:
+    def _log(
+        self, agent, task, tier, model, provider, latency_ms, result, status, error,
+        ram_mb=None, vram_mb=None, cache_hit=False,
+    ) -> None:
         if not self.log_runs:
             return
         try:
@@ -58,6 +63,9 @@ class ModelGateway:
                         output_tokens=result.output_tokens if result else None,
                         status=status,
                         error=error,
+                        ram_usage_mb=ram_mb,
+                        vram_usage_mb=vram_mb,
+                        cache_hit=cache_hit,
                     )
                 )
         except Exception as exc:  # noqa: BLE001 - logging must never break the pipeline
@@ -77,6 +85,8 @@ class ModelGateway:
         max_tokens: int = 1024,
         temperature: float = 0.2,
         reasoning_required: bool = False,
+        use_cache: bool = True,
+        measure_resources: bool = False,
     ) -> GenerationResult:
         decision = self.router.route(
             task_type=task_type,
@@ -105,6 +115,14 @@ class ModelGateway:
                 last_error = ModelUnavailableError(f"No adapter registered for provider {provider_name}")
                 continue
 
+            cache_key = compute_cache_key(provider_name, model_name, request) if use_cache else None
+            if cache_key is not None:
+                cached = get_cached(cache_key)
+                if cached is not None:
+                    self._log(agent, task_type, tier, model_name, provider_name, 0.0, cached, "cache_hit", None, cache_hit=True)
+                    return cached
+
+            ram_before = process_ram_mb(provider_name) if measure_resources else None
             start = time.monotonic()
             try:
                 result = adapter.generate(request, model_name)
@@ -115,7 +133,18 @@ class ModelGateway:
                 last_error = exc
                 continue
 
-            self._log(agent, task_type, tier, model_name, provider_name, result.latency_ms, result, "ok", None)
+            ram_mb = process_ram_mb(provider_name) if measure_resources else None
+            vram_mb = gpu_vram_usage_mb() if measure_resources else None
+            if ram_before is not None and ram_mb is not None:
+                ram_mb = max(ram_mb, ram_before)  # report peak, not the (possibly lower) post-call sample
+
+            if cache_key is not None:
+                store_cached(cache_key, result)
+
+            self._log(
+                agent, task_type, tier, model_name, provider_name, result.latency_ms, result, "ok", None,
+                ram_mb=ram_mb, vram_mb=vram_mb,
+            )
             return result
 
         error_msg = f"All model tiers exhausted for chain={chain}: {last_error}"

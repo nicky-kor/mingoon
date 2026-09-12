@@ -236,8 +236,27 @@ class LLMRun(Base):
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     estimated_cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
-    status: Mapped[str] = mapped_column(String(30), default="ok")  # ok/fallback/error
+    status: Mapped[str] = mapped_column(String(30), default="ok")  # ok/fallback/error/cache_hit
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ram_usage_mb: Mapped[float | None] = mapped_column(Float, nullable=True)
+    vram_usage_mb: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cache_hit: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class LLMCache(Base):
+    """Response cache keyed on (provider, model, prompt, system, max_tokens,
+    temperature) — spec section 15: never repeat an identical call."""
+
+    __tablename__ = "llm_cache"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cache_key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    provider: Mapped[str] = mapped_column(String(50))
+    model: Mapped[str] = mapped_column(String(150))
+    response_text: Mapped[str] = mapped_column(Text)
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_now)
 
 
 class ModelBenchmark(Base):
@@ -246,14 +265,26 @@ class ModelBenchmark(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     timestamp: Mapped[dt.datetime] = mapped_column(DateTime, default=_now)
     task: Mapped[str] = mapped_column(String(100))
+    category: Mapped[str | None] = mapped_column(String(100), nullable=True)  # benchmark dataset category
     provider: Mapped[str] = mapped_column(String(50))
     model: Mapped[str] = mapped_column(String(150))
+    role_hint: Mapped[str | None] = mapped_column(String(30), nullable=True)  # local_fast/standard/reasoning candidate
     accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)
     quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    korean_quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    technical_accuracy_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    resource_efficiency_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    stability_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    composite_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fast_task_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reasoning_task_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
     token_usage: Mapped[int | None] = mapped_column(Integer, nullable=True)
     estimated_cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ram_usage_mb: Mapped[float | None] = mapped_column(Float, nullable=True)
     vram_usage_mb: Mapped[float | None] = mapped_column(Float, nullable=True)
+    disk_size_mb: Mapped[float | None] = mapped_column(Float, nullable=True)
+    success: Mapped[bool] = mapped_column(Boolean, default=True)
     failure_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 

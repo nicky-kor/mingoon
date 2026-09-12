@@ -30,6 +30,30 @@ class OllamaAdapter(ProviderAdapter):
         except Exception:  # noqa: BLE001
             return False
 
+    def get_version(self) -> str | None:
+        """Real Ollama server version via GET /api/version, or None if
+        unreachable. Never guessed."""
+        try:
+            resp = httpx.get(f"{self.base_url}/api/version", timeout=3.0)
+            resp.raise_for_status()
+            return resp.json().get("version")
+        except Exception:  # noqa: BLE001
+            return None
+
+    def list_models(self) -> list[dict]:
+        """Equivalent of `ollama list`: models actually pulled on this
+        machine, with on-disk size. Returns [] if Ollama isn't reachable —
+        never raises, since this is used for discovery, not a hard
+        dependency (spec section 4: 'do not assume a model name')."""
+        try:
+            resp = httpx.get(f"{self.base_url}/api/tags", timeout=5.0)
+            resp.raise_for_status()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("could not list Ollama models: %s", exc)
+            return []
+        data = resp.json()
+        return data.get("models", [])
+
     def generate(self, request: GenerationRequest, model: str) -> GenerationResult:
         payload = {
             "model": model,
