@@ -90,9 +90,13 @@ scoring weight is hardcoded in Python:
 
 ## Local LLM
 
-Ollama-based (`research_os/models/local.py`); see `docs/local-llm.md` for
-model selection guidance for 8 GB VRAM and the evaluation workflow
-(`research-os evaluate`).
+Ollama-based (`research_os/models/local.py`). `research-os evaluate` runs
+a real benchmark (6 fixed tasks x whatever models `ollama list` shows) and
+writes `data/reports/model-benchmark.md`; `research-os benchmark-apply`
+then writes the winning model per role into `config/models.yaml`. See
+`docs/local-llm.md` — including which parts of this were verified in this
+build environment (no GPU/Ollama here) versus what's pending a run on the
+target PC.
 
 ## Cloud LLM
 
@@ -119,7 +123,8 @@ research-os run [--no-llm]                # full pipeline: collect -> ... -> sto
 research-os report daily [--no-llm]
 research-os report weekly [--no-llm]
 research-os research "topic" [--no-llm]   # deep research grounded in the local DB
-research-os evaluate                      # LLM Evaluation Lab -> data/reports/model-benchmark.md
+research-os evaluate                      # Local LLM Benchmark -> data/reports/model-benchmark.md
+research-os benchmark-apply               # write the benchmark's role picks into config/models.yaml
 research-os skills                        # Personal Skill Graph
 ```
 
@@ -153,11 +158,14 @@ pytest
 ruff check src tests
 ```
 
-40 tests cover configuration, schema/normalization, deduplication,
-scoring, the model router, the model gateway's fallback chain, the arXiv
-collector (mocked HTTP), every agent's non-LLM fallback path, the
-knowledge graph, the skill graph, and a full offline pipeline integration
-test (collect → classify → summarize → analyze → transfer → store).
+79 tests cover configuration, schema/normalization, deduplication,
+scoring, the model router, the model gateway's fallback chain and response
+cache, the arXiv collector (mocked HTTP), the Ollama adapter's model/version
+discovery, every agent's non-LLM fallback path, the knowledge graph, the
+skill graph, the local LLM benchmark and scoring heuristics (mocked
+Ollama backend), the `config/models.yaml` auto-update, and a full offline
+pipeline integration test (collect → classify → summarize → analyze →
+transfer → store).
 
 ## Troubleshooting
 

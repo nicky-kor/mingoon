@@ -72,3 +72,10 @@ hardcoded in Python — see `research_os/core/config.py`.
   `llm_runs` table and to `logs/research_os.log` (spec section 43).
 - Deduplication runs before any LLM call, so a re-collected duplicate is
   never re-analyzed (cost control, spec section 24/42).
+- `ModelGateway` caches every (provider, model, prompt, system,
+  max_tokens, temperature) combination in the `llm_cache` table
+  (`models/cache.py`) — an identical request is never re-sent to a model
+  (spec section 15). Best-effort RAM/VRAM probing
+  (`core/resource_probe.py`) is opt-in per call (`measure_resources=True`)
+  so normal agent traffic doesn't pay that overhead; the local LLM
+  benchmark (`docs/local-llm.md`) uses it directly.

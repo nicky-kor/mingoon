@@ -55,6 +55,15 @@ from `ModelUnavailableError` before falling back to the next tier. Model
 IDs live in `config/models.yaml`; a typo or a decommissioned model name
 there is a common cause.
 
+## `research-os evaluate` says everything is UNKNOWN/BLOCKED
+
+That's the correct output when Ollama isn't running or has no models
+pulled — see the "Limitations" section it prints for the specific reason
+(`Ollama is not reachable at ...` vs `no models are installed`). Fix per
+`docs/local-llm.md`, then re-run. `research-os benchmark-apply` will
+likewise refuse (exit code 1, not a silent no-op) if the database has no
+benchmark results yet — run `evaluate` first.
+
 ## I want to test the pipeline without hitting any real network/API
 
 Every collector, and every agent, has a documented fallback path with zero

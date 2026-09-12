@@ -111,3 +111,18 @@ rule-based/heuristic fallbacks — see `research-os status` and the sample
 reports in `data/reports/` generated during this build. On a machine with
 Ollama running and/or `ANTHROPIC_API_KEY` set, the same commands will
 transparently use the LLM path instead.
+
+### Re-confirmed during the Local LLM Benchmark work
+
+A later session in this same kind of container re-checked reachability
+before building the local-LLM benchmark kit (`docs/local-llm.md`):
+`ollama.com` is blocked by the same egress policy (`EGRESS_BLOCKED` from
+`WebFetch`), `export.arxiv.org` is still blocked, and there is still no
+`ollama`/`nvidia-smi`/`rocm-smi` binary in the container. Because actually
+running Ollama and benchmarking real models requires the target Windows
+PC's hardware, that session built and unit-tested the benchmark
+tooling (dataset, prompts, scoring, resource probing, report generation)
+here with a mocked Ollama backend, and left running it for real —
+`research-os evaluate` then `research-os benchmark-apply` — as the next
+step on the actual PC. See `docs/local-llm.md` for the full breakdown of
+what was verified here versus what is still pending real hardware.
