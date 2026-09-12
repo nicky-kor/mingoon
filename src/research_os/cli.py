@@ -20,7 +20,13 @@ from research_os.database.models import (
     Skill,
     Technology,
 )
+from research_os.evaluation.apply_config import apply_role_selection_to_models_yaml
 from research_os.evaluation.lab import render_report, run_evaluation
+from research_os.evaluation.local_benchmark import (
+    derive_role_selection_from_db,
+    render_report as render_local_benchmark_report,
+    run_local_benchmark,
+)
 from research_os.knowledge.skills import LEVEL_LABELS, list_skills, seed_default_skills
 from research_os.models.anthropic import AnthropicAdapter
 from research_os.models.local import OllamaAdapter
@@ -255,11 +261,20 @@ def research(topic: str, no_llm: bool = typer.Option(False, "--no-llm")) -> None
 
 @app.command()
 def evaluate() -> None:
-    """Run the LLM Evaluation Lab across configured tiers."""
+    """Run the Local LLM Benchmark (spec: LOCAL LLM SETUP + BENCHMARK TASK) plus
+    a cloud-tier availability smoke test, and write data/reports/model-benchmark.md."""
     setup_logging()
     init_db()
-    rows = run_evaluation()
-    content = render_report(rows)
+
+    local_result = run_local_benchmark()
+    content = render_local_benchmark_report(local_result)
+
+    cloud_rows = [r for r in run_evaluation() if r.provider != "ollama"]
+    if cloud_rows:
+        content += "\n" + render_report(cloud_rows).replace(
+            "# Model Benchmark Report", "## Cloud Tier Availability (smoke test)"
+        )
+
     from research_os.core.paths import resolve
 
     out_path = resolve("data/reports") / "model-benchmark.md"
@@ -267,6 +282,31 @@ def evaluate() -> None:
     out_path.write_text(content, encoding="utf-8")
     typer.echo(content)
     typer.echo(f"Saved to {out_path}")
+    if any(local_result.role_selection.values()):
+        typer.echo("\nRun `research-os benchmark-apply` to write these role selections into config/models.yaml.")
+
+
+@app.command("benchmark-apply")
+def benchmark_apply() -> None:
+    """Update config/models.yaml local_fast/local_standard/local_reasoning
+    from the most recent `research-os evaluate` results in the database."""
+    setup_logging()
+    init_db()
+    with session_scope() as session:
+        role_selection = derive_role_selection_from_db(session)
+
+    if not any(role_selection.values()):
+        typer.echo("No local benchmark results in the database yet — run `research-os evaluate` first.")
+        raise typer.Exit(code=1)
+
+    changes = apply_role_selection_to_models_yaml(role_selection)
+    if not changes:
+        typer.echo("config/models.yaml already matches the latest benchmark results — nothing to change.")
+        return
+
+    typer.echo("Updated config/models.yaml:")
+    for change in changes:
+        typer.echo(f"  {change}")
 
 
 @app.command()
