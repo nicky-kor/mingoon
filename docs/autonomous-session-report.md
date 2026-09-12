@@ -187,3 +187,34 @@ pytest
 Then decide, from real numbers, whether a second (7-8B) or third
 (reasoning-oriented) candidate is worth the additional VRAM/disk budget
 before pulling it — per spec, one model at a time, smallest first.
+
+## Round 4: Verified on the real PC ✅
+
+Everything "Blocked" above has since been done, live, on the user's
+actual machine, in the same conversation (guided step-by-step: PowerShell
+selection → Python not on PATH → PowerShell execution-policy blocked venv
+activation, worked around via a global-Python PATH fix → Ollama already
+installed (0.34.0) → pulled `qwen2.5:3b-instruct`, then
+`qwen2.5:7b-instruct` → `research-os evaluate` → `research-os
+benchmark-apply` → `pytest`).
+
+Real results (see `docs/local-llm.md`'s new "Status: verified on the real
+PC" section for the full table): CPU/RAM/OS matched the target spec
+exactly; `local_fast` → `qwen2.5:3b-instruct` (composite 84, won on
+latency); `local_standard`/`local_reasoning` → `qwen2.5:7b-instruct`
+(composite 82, won on quality) — the fast/quality split the benchmark
+design intended, confirmed with real inference rather than the mocked
+backend. `config/models.yaml` was updated by `benchmark-apply` itself
+(only the `local_reasoning` line actually changed).
+
+Along the way, running the real test suite on the PC's actual Python
+3.14.7 (this project was built/tested against 3.11.15) surfaced a
+`datetime.utcnow()` DeprecationWarning (67 occurrences across the test
+output) that hadn't shown up in the sandbox's older Python — fixed in
+commit `42e9037` (see "Bugs Fixed" above) and reverified on the PC:
+`pytest` went from 106 passed/67 warnings to **107 passed/0 warnings**.
+
+Remaining, not yet done (optional, not blocking): benchmarking a
+dedicated reasoning-oriented model (e.g. `deepseek-r1:7b`) against the
+7B general model for the `local_reasoning` role specifically, and
+verifying the cloud fallback tiers with a real `ANTHROPIC_API_KEY`.

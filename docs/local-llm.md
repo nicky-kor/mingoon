@@ -1,5 +1,40 @@
 # Local LLM Setup + Benchmark
 
+## Status: verified on the real PC ✅
+
+The benchmark kit below was built in a cloud sandbox that couldn't run
+Ollama itself (see "Where this actually runs"). It has since been run for
+real on the target PC and the results are in `config/models.yaml`:
+
+| Hardware (measured, not assumed) | |
+|---|---|
+| CPU | AMD64 Family 25 Model 120 (12 logical cores) — matches Ryzen 5 8500G |
+| RAM | 15.1 GB |
+| OS | Windows 11 |
+| Ollama | 0.34.0, installed and running |
+
+| Role | Model | Quality | Korean | Latency | Composite |
+|---|---|---|---|---|---|
+| `local_fast` | `qwen2.5:3b-instruct` | 94 | 90 | 4931 ms | **84** |
+| `local_standard` | `qwen2.5:7b-instruct` | 97 | 88 | 7394 ms | 82 |
+| `local_reasoning` | `qwen2.5:7b-instruct` | 97 | 88 | 7394 ms | 82 |
+
+The 3B model won `local_fast` on speed despite slightly lower raw quality
+(the composite score weights latency); the 7B model won `local_standard`/
+`local_reasoning` on quality — exactly the split the design intended.
+Applied via `research-os benchmark-apply` (only the `local_reasoning` line
+actually changed — `local_fast`/`local_standard` already matched
+`config/models.yaml`'s defaults). Full report:
+`data/reports/model-benchmark.md` on that machine. `pytest` — 107/107
+passing on Python 3.14.7, the PC's actual interpreter version (a
+`datetime.utcnow()` deprecation surfaced by that newer Python was found
+and fixed in the process — see `docs/autonomous-session-report.md`).
+
+Not yet benchmarked: a dedicated reasoning-oriented candidate (e.g.
+`deepseek-r1:7b`) — `local_reasoning` currently just reuses the 7B
+general model since nothing more specialized has been tested yet. Cloud
+tiers are also unverified (`ANTHROPIC_API_KEY` not set on that machine).
+
 ## Where this actually runs
 
 This session (Claude Code on the web) executes in a cloud Linux
