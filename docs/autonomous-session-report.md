@@ -1,11 +1,15 @@
 # Autonomous Development Session
 
-Two chained requests handled without further user input:
+Three chained requests handled without further user input:
 1. "Local LLM Setup + Benchmark" — build the tooling to select
    `local_fast`/`local_standard`/`local_reasoning` from real Ollama
    benchmarks.
 2. An explicit autonomous-session instruction to audit, stabilize, test,
    and document the current state while the user was away.
+3. "스스로 더 할건 없어?" (anything else you can do yourself?) — closed
+   out the audit checklist items skipped in round 2 (RSS/GitHub collector
+   tests, CLI wiring tests, config consistency checks) and found a real
+   bug in the process; see "Round 3" below.
 
 ## Completed
 
@@ -55,14 +59,20 @@ Two chained requests handled without further user input:
 
 ## Tests
 
-- 40 → **79 passing**, 0 failing (`pytest`). New coverage: LLM cache
-  (hit/miss, gateway integration), resource probe (never raises, returns
-  `None` when unmeasurable), benchmark dataset/prompts, all scoring
-  heuristics, the full local benchmark flow against a mocked Ollama
-  backend (blocked-when-unavailable, blocked-when-no-models, and a
-  successful end-to-end run), Ollama model/version discovery, and
-  `config/models.yaml` auto-update (including the no-op and
-  unknown-tier-warning cases).
+- 40 → 79 → **106 passing**, 0 failing (`pytest`, full suite in ~2s).
+  New coverage: LLM cache (hit/miss, gateway integration), resource probe
+  (never raises, returns `None` when unmeasurable), benchmark
+  dataset/prompts, all scoring heuristics, the full local benchmark flow
+  against a mocked Ollama backend (blocked-when-unavailable,
+  blocked-when-no-models, and a successful end-to-end run), Ollama
+  model/version discovery, `config/models.yaml` auto-update (including
+  the no-op and unknown-tier-warning cases), the RSS and GitHub
+  collectors (parses correctly, never raises on a network error,
+  disabled-by-default stays network-free), the CLI itself via
+  `typer.testing.CliRunner` (init/status/models/skills/collect/evaluate/
+  benchmark-apply/report), and cross-checks that every tier name
+  referenced in `config/routing.yaml`'s agent defaults, rules, and
+  `config/models.yaml`'s fallback/escalation chains actually exists.
 - `ruff check src tests` — all checks passed.
 - Existing Phase 1 tests untouched and still green — nothing was broken.
 
@@ -119,12 +129,23 @@ Two chained requests handled without further user input:
 - `evaluation/local_benchmark.py` report renderer: the "Benchmark Tasks"
   section listed all 6 tasks as "1." (fixed `f"1. {key}"` instead of an
   incrementing number) — fixed to `enumerate(..., start=1)`.
-- (Carried over context, not new this session, but re-verified while
-  auditing `processing/classify.py`: industry classification intentionally
-  does not reuse `config/battery.yaml`'s process/equipment keywords, so a
-  non-battery document like a steel rolling-mill paper isn't misclassified
-  as `battery_manufacturing` — confirmed still correct and covered by
-  `tests/test_agents_fallback.py`.)
+- **Round 3 (self-audit follow-up):** `ArxivCollector` and
+  `GitHubCollector` used `param or cfg.get(...)` to fall back to
+  `config/system.yaml` defaults — since an empty list is falsy in Python,
+  passing `categories=[]` / `topics=[]` *explicitly* silently fell back
+  to the config defaults instead of being honored as "collect nothing".
+  `RSSCollector` already used the correct `feeds if feeds is not None
+  else ...` pattern. This wasn't reachable from production code
+  (`DiscoveryAgent` never passes an explicit empty list), but it was
+  caught the moment a test tried to construct
+  `GitHubCollector(topics=[])` to verify disabled-by-default behavior —
+  that test instead made **10 real, unmocked calls to the live GitHub
+  API** (~13s) because it silently used the real 10-topic config list.
+  Fixed both to the `is not None` pattern, added the same
+  empty-input-returns-`[]` guard `ArxivCollector.collect()` was missing,
+  and added a regression test per collector that fails loudly (raises)
+  if a network call is made at all when an empty list is passed
+  explicitly. Full test suite dropped from ~15s to ~2s once fixed.
 
 ## Improvements
 
