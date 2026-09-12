@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session
 from research_os.agents.briefing import BriefingAgent
 from research_os.agents.trend import TrendAgent
 from research_os.core.paths import resolve
+from research_os.core.timeutils import utc_now
 from research_os.database.models import Document, Score, TransferOpportunity
 from research_os.knowledge.skills import LEVEL_LABELS, list_skills
 from research_os.models.gateway import ModelGateway
 
 
 def generate_weekly_report(session: Session, use_llm: bool = True) -> str:
-    now = dt.datetime.utcnow()
+    now = utc_now()
     since = now - dt.timedelta(days=7)
 
     docs = session.scalars(select(Document).where(Document.collected_at >= since)).all()
@@ -88,7 +89,7 @@ def generate_weekly_report(session: Session, use_llm: bool = True) -> str:
 
 def write_weekly_report(session: Session, use_llm: bool = True) -> str:
     content = generate_weekly_report(session, use_llm=use_llm)
-    today = dt.datetime.utcnow().date().isoformat()
+    today = utc_now().date().isoformat()
     out_path = resolve("data/reports") / f"{today}-weekly.md"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(content, encoding="utf-8")

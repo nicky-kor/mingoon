@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from research_os.agents.briefing import BriefingAgent
 from research_os.core.paths import resolve
+from research_os.core.timeutils import utc_now
 from research_os.database.models import Document, Score, TransferOpportunity
 from research_os.models.gateway import ModelGateway
 
@@ -25,7 +26,7 @@ def _top_documents(session: Session, since: dt.datetime, limit: int = 10) -> lis
 
 
 def generate_daily_report(session: Session, use_llm: bool = True) -> str:
-    today = dt.datetime.utcnow()
+    today = utc_now()
     since = today - dt.timedelta(days=1)
     top = _top_documents(session, since)
 
@@ -83,7 +84,7 @@ def generate_daily_report(session: Session, use_llm: bool = True) -> str:
 
 def write_daily_report(session: Session, use_llm: bool = True) -> str:
     content = generate_daily_report(session, use_llm=use_llm)
-    today = dt.datetime.utcnow().date().isoformat()
+    today = utc_now().date().isoformat()
     out_path = resolve("data/reports") / f"{today}-daily.md"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(content, encoding="utf-8")

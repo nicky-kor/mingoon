@@ -1,14 +1,13 @@
 """Manufacturing AI Research OS CLI (spec section 39)."""
 from __future__ import annotations
 
-import datetime as dt
-
 import typer
 from sqlalchemy import func, select
 
 from research_os.core import env_info
 from research_os.core.config import industries_config, models_config, problems_config, technologies_config
 from research_os.core.logging_setup import get_logger, setup_logging
+from research_os.core.timeutils import utc_now
 from research_os.database.db import init_db, session_scope
 from research_os.database.models import (
     Document,
@@ -246,7 +245,7 @@ def research(topic: str, no_llm: bool = typer.Option(False, "--no-llm")) -> None
 
     from research_os.core.paths import resolve
 
-    ts = dt.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    ts = utc_now().strftime("%Y%m%d-%H%M%S")
     safe_topic = "".join(c if c.isalnum() else "-" for c in topic.lower())[:60]
     out_path = resolve("data/reports") / f"research-{safe_topic}-{ts}.md"
     out_path.parent.mkdir(parents=True, exist_ok=True)

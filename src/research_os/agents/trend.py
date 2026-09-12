@@ -4,17 +4,18 @@ documents. Operates on already-stored documents rather than a single item.
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from research_os.core.timeutils import utc_now
 from research_os.database.models import Document
 
 
 class TrendAgent:
     def analyze(self, session: Session, window_days: int = 30) -> dict:
-        since = datetime.utcnow() - timedelta(days=window_days)
+        since = utc_now() - timedelta(days=window_days)
         docs = session.scalars(
             select(Document).where(Document.collected_at >= since)
         ).all()

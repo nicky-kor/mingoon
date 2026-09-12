@@ -10,6 +10,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from research_os.core.timeutils import utc_now
+
 PrivacyLevel = Literal["public", "personal", "restricted"]
 EvidenceKind = Literal["FACT", "INFERENCE", "HYPOTHESIS"]
 
@@ -30,7 +32,7 @@ class ResearchItem(BaseModel):
     source: str
     source_type: str
     published_at: dt.datetime | None = None
-    collected_at: dt.datetime = Field(default_factory=dt.datetime.utcnow)
+    collected_at: dt.datetime = Field(default_factory=utc_now)
     authors: list[str] = Field(default_factory=list)
     abstract: str | None = None
     content: str | None = None

@@ -22,13 +22,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from research_os.core.timeutils import utc_now
+
 
 class Base(DeclarativeBase):
     pass
 
 
 def _now() -> dt.datetime:
-    return dt.datetime.utcnow()
+    return utc_now()
 
 
 class Source(Base):
