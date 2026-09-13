@@ -5,6 +5,8 @@ from typing import Any
 
 from research_os.collectors.arxiv import ArxivCollector
 from research_os.collectors.github import GitHubCollector
+from research_os.collectors.kiie import KIIECollector
+from research_os.collectors.ksphm import KSPHMCollector
 from research_os.collectors.rss import RSSCollector
 from research_os.core.config import system_config
 from research_os.core.logging_setup import get_logger
@@ -15,6 +17,8 @@ _COLLECTOR_REGISTRY = {
     "arxiv": ArxivCollector,
     "rss": RSSCollector,
     "github": GitHubCollector,
+    "ksphm": KSPHMCollector,
+    "kiie": KIIECollector,
 }
 
 

@@ -61,6 +61,15 @@ sources:
       - "battery manufacturing AI"
       - "time series AI"
       - "agentic AI"
+  # Korean academic societies (no RSS available -- old bulletin-board
+  # sites scraped directly, see collectors/ksphm.py and collectors/kiie.py).
+  ksphm:
+    enabled: true
+    base_url: "https://www.phm.or.kr/info/notice.php"
+    pages: 1
+  kiie:
+    enabled: true
+    base_url: "https://kiie.org/"
 
 pipeline:
   stages:
