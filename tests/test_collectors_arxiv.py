@@ -25,7 +25,10 @@ class FakeResponse:
 
 
 def test_arxiv_collector_parses_entries(monkeypatch):
-    def fake_get(url, params=None, timeout=None):
+    captured = {}
+
+    def fake_get(url, params=None, timeout=None, follow_redirects=None):
+        captured["follow_redirects"] = follow_redirects
         return FakeResponse(FIXTURE_XML)
 
     monkeypatch.setattr(arxiv_module.httpx, "get", fake_get)
@@ -39,6 +42,22 @@ def test_arxiv_collector_parses_entries(monkeypatch):
     assert item["title"] == "A Test Paper About Anomaly Detection"
     assert item["source_type"] == "arxiv"
     assert "anomaly detection" in item["abstract"].lower()
+
+    # Regression guard: arXiv 301-redirects http:// to https:// on its API
+    # endpoint. httpx does NOT follow redirects by default, and
+    # response.raise_for_status() actively raises on an unfollowed
+    # redirect ("Redirect response '301 Moved Permanently'...") — this
+    # broke real collection in production before follow_redirects=True
+    # was added.
+    assert captured["follow_redirects"] is True
+
+
+def test_arxiv_collector_default_base_url_is_https():
+    # The default (no ARXIV_BASE_URL override) must be https — arXiv
+    # redirects the plain-http endpoint, and depending on a redirect
+    # succeeding is one avoidable round trip per request.
+    collector = arxiv_module.ArxivCollector(categories=["cs.LG"])
+    assert collector.base_url.startswith("https://")
 
 
 def test_arxiv_collector_with_empty_categories_makes_no_network_call(monkeypatch):
@@ -57,7 +76,7 @@ def test_arxiv_collector_with_empty_categories_makes_no_network_call(monkeypatch
 
 
 def test_arxiv_collector_run_never_raises_on_network_error(monkeypatch):
-    def fake_get(url, params=None, timeout=None):
+    def fake_get(url, params=None, timeout=None, follow_redirects=None):
         raise ConnectionError("network down")
 
     monkeypatch.setattr(arxiv_module.httpx, "get", fake_get)

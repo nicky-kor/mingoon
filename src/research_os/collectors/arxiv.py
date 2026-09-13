@@ -33,7 +33,7 @@ class ArxivCollector(Collector):
         cfg = self._source_config("arxiv")
         self.categories = categories if categories is not None else cfg.get("categories", ["cs.AI"])
         self.max_results = max_results if max_results is not None else cfg.get("max_results_per_run", 25)
-        self.base_url = base_url or cfg.get("base_url", "http://export.arxiv.org/api/query")
+        self.base_url = base_url or cfg.get("base_url", "https://export.arxiv.org/api/query")
         self.timeout = timeout
         self.max_retries = max_retries
 
@@ -51,7 +51,7 @@ class ArxivCollector(Collector):
         last_exc: Exception | None = None
         for attempt in range(1, self.max_retries + 2):
             try:
-                resp = httpx.get(self.base_url, params=params, timeout=self.timeout)
+                resp = httpx.get(self.base_url, params=params, timeout=self.timeout, follow_redirects=True)
                 resp.raise_for_status()
                 return resp.text
             except Exception as exc:  # noqa: BLE001

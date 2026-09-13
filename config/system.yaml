@@ -24,7 +24,7 @@ logging:
 sources:
   arxiv:
     enabled: true
-    base_url: "${ARXIV_BASE_URL:-http://export.arxiv.org/api/query}"
+    base_url: "${ARXIV_BASE_URL:-https://export.arxiv.org/api/query}"
     categories:
       - "cs.AI"
       - "cs.LG"
