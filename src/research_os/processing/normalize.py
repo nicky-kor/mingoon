@@ -7,12 +7,13 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from dateutil import parser as date_parser
 
 from research_os.core.schema import ResearchItem
+from research_os.core.timeutils import utc_now
 
 
 def normalize_title(title: str) -> str:
@@ -46,7 +47,7 @@ def normalize_item(raw: dict[str, Any]) -> ResearchItem:
     data["title"] = title
     data["abstract"] = abstract
     data["published_at"] = _parse_date(raw.get("published_at"))
-    data.setdefault("collected_at", datetime.now(timezone.utc).replace(tzinfo=None))
+    data.setdefault("collected_at", utc_now())
     data["normalized_title"] = normalize_title(title)
     data["content_hash"] = compute_content_hash(title, abstract)
     data.setdefault("id", raw.get("external_id") or data["content_hash"])

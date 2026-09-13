@@ -13,7 +13,6 @@ import feedparser
 import httpx
 
 from research_os.collectors.base import Collector
-from research_os.core.config import system_config
 from research_os.core.logging_setup import get_logger
 
 logger = get_logger("collectors.rss")
@@ -24,7 +23,7 @@ class RSSCollector(Collector):
     source_name = "rss"
 
     def __init__(self, feeds: list[str] | None = None, timeout: float = 20.0) -> None:
-        cfg = system_config().get("sources", {}).get("rss", {})
+        cfg = self._source_config("rss")
         self.feeds = feeds if feeds is not None else cfg.get("feeds", [])
         self.timeout = timeout
 

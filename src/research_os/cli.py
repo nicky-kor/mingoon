@@ -28,6 +28,7 @@ from research_os.evaluation.local_benchmark import (
 )
 from research_os.knowledge.skills import LEVEL_LABELS, list_skills, seed_default_skills
 from research_os.models.anthropic import AnthropicAdapter
+from research_os.models.gateway import build_default_adapters
 from research_os.models.local import OllamaAdapter
 from research_os.research import pipeline
 from research_os.reports.daily import write_daily_report
@@ -129,21 +130,29 @@ def status() -> None:
     typer.echo(f"  Skills: {skill_count}")
 
 
+_UNAVAILABLE_HINTS = {
+    "ollama": "Ollama not reachable",
+    "anthropic": "ANTHROPIC_API_KEY not set",
+    "openai": "OPENAI_API_KEY not set",
+    "google": "GOOGLE_API_KEY not set",
+}
+
+
 @app.command()
 def models() -> None:
     """List configured model tiers and provider availability."""
     cfg = models_config()
-    local_available = OllamaAdapter().is_available()
-    cloud_available = AnthropicAdapter().is_available()
+    adapters = build_default_adapters()
+    availability = {name: adapter.is_available() for name, adapter in adapters.items()}
     typer.echo("Configured model tiers:")
     for tier, entry in cfg.get("tiers", {}).items():
         provider = entry["provider"]
-        if provider == "ollama":
-            avail = "available" if local_available else "unavailable (Ollama not reachable)"
-        elif provider == "anthropic":
-            avail = "available" if cloud_available else "unavailable (ANTHROPIC_API_KEY not set)"
-        else:
+        if provider not in adapters:
             avail = "unknown"
+        elif availability[provider]:
+            avail = "available"
+        else:
+            avail = f"unavailable ({_UNAVAILABLE_HINTS.get(provider, 'not configured')})"
         typer.echo(f"  {tier:20s} -> {provider}:{entry['model']:30s} [{avail}]")
 
 

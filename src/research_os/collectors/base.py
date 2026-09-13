@@ -10,6 +10,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
+from research_os.core.config import system_config
 from research_os.core.logging_setup import get_logger
 
 logger = get_logger("collectors")
@@ -22,6 +23,12 @@ class CollectorError(Exception):
 class Collector(ABC):
     source_type: str = "unknown"
     source_name: str = "unknown"
+
+    @staticmethod
+    def _source_config(source_key: str) -> dict:
+        """This collector's block from config/system.yaml `sources.<key>`
+        (e.g. `sources.arxiv`), or {} if unset."""
+        return system_config().get("sources", {}).get(source_key, {})
 
     @abstractmethod
     def collect(self) -> list[dict[str, Any]]:

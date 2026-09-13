@@ -58,34 +58,35 @@ def classify_industry(title: str, abstract: str | None) -> str:
     return "general_manufacturing"
 
 
+def _best_keyword_match(text: str, candidates: list[tuple[str, list[str]]]) -> str | None:
+    """Returns the candidate key with the most keyword hits in `text`
+    (ties keep whichever candidate was seen first), or None if nothing
+    matched at all. Shared by classify_technology/problem/battery_process
+    below — they differ only in where their (key, keywords) pairs come
+    from."""
+    best_key, best_hits = None, 0
+    for key, keywords in candidates:
+        hits = sum(1 for kw in keywords if kw.lower() in text)
+        if hits > best_hits:
+            best_key, best_hits = key, hits
+    return best_key
+
+
 def classify_technology(title: str, abstract: str | None) -> str | None:
     text = _text_of(title, abstract)
-    best_key, best_hits = None, 0
-    for tech in technologies_config().get("technologies", []):
-        hits = sum(1 for kw in tech.get("keywords", []) if kw.lower() in text)
-        if hits > best_hits:
-            best_key, best_hits = tech["id"], hits
-    return best_key
+    candidates = [(t["id"], t.get("keywords", [])) for t in technologies_config().get("technologies", [])]
+    return _best_keyword_match(text, candidates)
 
 
 def classify_problem(title: str, abstract: str | None) -> str | None:
     text = _text_of(title, abstract)
-    best_key, best_hits = None, 0
-    for problem in problems_config().get("problems", []):
-        hits = sum(1 for kw in problem.get("keywords", []) if kw.lower() in text)
-        if hits > best_hits:
-            best_key, best_hits = problem["id"], hits
-    return best_key
+    candidates = [(p["id"], p.get("keywords", [])) for p in problems_config().get("problems", [])]
+    return _best_keyword_match(text, candidates)
 
 
 def classify_battery_process(title: str, abstract: str | None) -> str | None:
     text = _text_of(title, abstract)
-    best_key, best_hits = None, 0
-    for process, terms in battery_config().get("keywords", {}).items():
-        hits = sum(1 for kw in terms if kw.lower() in text)
-        if hits > best_hits:
-            best_key, best_hits = process, hits
-    return best_key
+    return _best_keyword_match(text, list(battery_config().get("keywords", {}).items()))
 
 
 def extract_keywords(title: str, abstract: str | None, top_n: int = 8) -> list[str]:

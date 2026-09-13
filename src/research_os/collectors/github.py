@@ -13,7 +13,6 @@ from typing import Any
 import httpx
 
 from research_os.collectors.base import Collector
-from research_os.core.config import system_config
 from research_os.core.logging_setup import get_logger
 
 logger = get_logger("collectors.github")
@@ -30,7 +29,7 @@ class GitHubCollector(Collector):
         per_topic_limit: int = 5,
         timeout: float = 20.0,
     ) -> None:
-        cfg = system_config().get("sources", {}).get("github", {})
+        cfg = self._source_config("github")
         self.topics = topics if topics is not None else cfg.get("topics", [])
         self.api_url = api_url or cfg.get("api_url", "https://api.github.com/search/repositories")
         self.per_topic_limit = per_topic_limit

@@ -129,6 +129,56 @@ class LocalBenchmarkResult:
     limitations: list[str]
 
 
+@dataclass
+class _RoleCandidate:
+    """Just enough of a model's benchmark results to pick role winners —
+    normalizes over the two shapes this comes from: a fresh in-memory
+    `ModelRunResult` (this run) or a persisted `ModelBenchmark` DB row
+    (a past run), so the selection formula lives in exactly one place."""
+
+    model: str
+    fast_task_score: float | None
+    quality: float | None
+    reasoning_task_score: float | None
+    latency_ms: float | None
+
+
+def _empty_role_selection() -> dict:
+    return {"local_fast": None, "local_standard": None, "local_reasoning": None}
+
+
+def _best_by(candidates: list[_RoleCandidate], key_fn) -> str | None:
+    scored = [(c, key_fn(c)) for c in candidates]
+    scored = [(c, s) for c, s in scored if s is not None]
+    return max(scored, key=lambda pair: pair[1])[0].model if scored else None
+
+
+def _select_role_winners(candidates: list[_RoleCandidate]) -> dict:
+    if not candidates:
+        return _empty_role_selection()
+    return {
+        "local_fast": _best_by(candidates, lambda c: (
+            (c.fast_task_score or 0) * 0.5 + (scoring.latency_score(c.latency_ms) or 0) * 0.5
+        )),
+        "local_standard": _best_by(candidates, lambda c: c.quality),
+        "local_reasoning": _best_by(candidates, lambda c: c.reasoning_task_score),
+    }
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _blocked_result(hardware: dict, ollama_available: bool, ollama_version: str | None, limitation: str) -> LocalBenchmarkResult:
+    """A result for the two "couldn't even start" cases (Ollama unreachable,
+    or reachable but no models installed) — no model was executed, so
+    role selection is honestly empty rather than fabricated."""
+    return LocalBenchmarkResult(
+        generated_at=_now_iso(), hardware=hardware, ollama_available=ollama_available,
+        ollama_version=ollama_version, models=[], role_selection=_empty_role_selection(),
+        limitations=[limitation],
+    )
+
 
 # Reasoning-oriented models (e.g. DeepSeek-R1) emit a long internal
 # "thinking" trace before the actual answer — a tight max_tokens budget
@@ -183,28 +233,20 @@ def run_local_benchmark(ollama_base_url: str | None = None) -> LocalBenchmarkRes
     hardware = env_info.summary()
 
     if not adapter.is_available():
-        return LocalBenchmarkResult(
-            generated_at=datetime.now(timezone.utc).isoformat(),
-            hardware=hardware, ollama_available=False, ollama_version=None,
-            models=[], role_selection={"local_fast": None, "local_standard": None, "local_reasoning": None},
-            limitations=[
-                "Ollama is not reachable at " + adapter.base_url + " — install it and run "
-                "`ollama pull <model>` for at least one candidate before benchmarking "
-                "(see docs/local-llm.md). No local model was executed; role selection is BLOCKED.",
-            ],
+        return _blocked_result(
+            hardware, False, None,
+            "Ollama is not reachable at " + adapter.base_url + " — install it and run "
+            "`ollama pull <model>` for at least one candidate before benchmarking "
+            "(see docs/local-llm.md). No local model was executed; role selection is BLOCKED.",
         )
 
     installed = adapter.list_models()
     if not installed:
-        return LocalBenchmarkResult(
-            generated_at=datetime.now(timezone.utc).isoformat(),
-            hardware=hardware, ollama_available=True, ollama_version=adapter.get_version(),
-            models=[], role_selection={"local_fast": None, "local_standard": None, "local_reasoning": None},
-            limitations=[
-                "Ollama is running but no models are installed (`ollama list` is empty). "
-                "Pull at least one small candidate (e.g. `ollama pull qwen2.5:3b-instruct`) "
-                "and re-run `research-os evaluate`.",
-            ],
+        return _blocked_result(
+            hardware, True, adapter.get_version(),
+            "Ollama is running but no models are installed (`ollama list` is empty). "
+            "Pull at least one small candidate (e.g. `ollama pull qwen2.5:3b-instruct`) "
+            "and re-run `research-os evaluate`.",
         )
 
     ram_before = process_ram_mb("ollama")
@@ -230,7 +272,7 @@ def run_local_benchmark(ollama_base_url: str | None = None) -> LocalBenchmarkRes
     role_selection = _select_roles(model_results)
 
     return LocalBenchmarkResult(
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=_now_iso(),
         hardware=hardware, ollama_available=True, ollama_version=adapter.get_version(),
         models=model_results, role_selection=role_selection,
         limitations=sorted(set(limitations)),
@@ -282,42 +324,19 @@ def derive_role_selection_from_db(session) -> dict:
     for row in rows:
         latest_per_model.setdefault(row.model, row)  # first hit per model = most recent, due to desc order
 
-    candidates = list(latest_per_model.values())
-    if not candidates:
-        return {"local_fast": None, "local_standard": None, "local_reasoning": None}
-
-    def best_by(score_fn):
-        scored = [(row, score_fn(row)) for row in candidates]
-        scored = [(row, s) for row, s in scored if s is not None]
-        return max(scored, key=lambda pair: pair[1])[0].model if scored else None
-
-    return {
-        "local_fast": best_by(lambda r: (
-            (r.fast_task_score or 0) * 0.5 + (scoring.latency_score(r.latency_ms) or 0) * 0.5
-        )),
-        "local_standard": best_by(lambda r: r.quality_score),
-        "local_reasoning": best_by(lambda r: r.reasoning_task_score),
-    }
+    candidates = [
+        _RoleCandidate(row.model, row.fast_task_score, row.quality_score, row.reasoning_task_score, row.latency_ms)
+        for row in latest_per_model.values()
+    ]
+    return _select_role_winners(candidates)
 
 
 def _select_roles(model_results: list[ModelRunResult]) -> dict:
-    if not model_results:
-        return {"local_fast": None, "local_standard": None, "local_reasoning": None}
-
-    def best_by(key_fn):
-        scored = [(m, key_fn(m)) for m in model_results]
-        scored = [(m, s) for m, s in scored if s is not None]
-        if not scored:
-            return None
-        return max(scored, key=lambda pair: pair[1])[0].model
-
-    return {
-        "local_fast": best_by(lambda m: (
-            (m.fast_task_score or 0) * 0.5 + (scoring.latency_score(m.avg_latency_ms) or 0) * 0.5
-        )),
-        "local_standard": best_by(lambda m: m.avg_quality),
-        "local_reasoning": best_by(lambda m: m.reasoning_task_score),
-    }
+    candidates = [
+        _RoleCandidate(m.model, m.fast_task_score, m.avg_quality, m.reasoning_task_score, m.avg_latency_ms)
+        for m in model_results
+    ]
+    return _select_role_winners(candidates)
 
 
 def render_report(result: LocalBenchmarkResult) -> str:

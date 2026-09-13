@@ -15,11 +15,8 @@ from research_os.core.config import models_config
 from research_os.core.logging_setup import get_logger
 from research_os.database.db import session_scope
 from research_os.database.models import ModelBenchmark
-from research_os.models.anthropic import AnthropicAdapter
 from research_os.models.base import GenerationRequest, ModelUnavailableError
-from research_os.models.google import GoogleAdapter
-from research_os.models.local import OllamaAdapter
-from research_os.models.openai import OpenAIAdapter
+from research_os.models.gateway import build_default_adapters
 
 logger = get_logger("evaluation.lab")
 
@@ -42,12 +39,7 @@ _SAMPLE_TASKS = [
     },
 ]
 
-_ADAPTERS = {
-    "ollama": OllamaAdapter(),
-    "anthropic": AnthropicAdapter(),
-    "openai": OpenAIAdapter(),
-    "google": GoogleAdapter(),
-}
+_ADAPTERS = build_default_adapters()
 
 
 @dataclass

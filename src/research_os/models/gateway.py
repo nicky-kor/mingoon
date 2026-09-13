@@ -29,16 +29,25 @@ class AllProvidersUnavailableError(Exception):
     pass
 
 
+def build_default_adapters() -> dict[str, ProviderAdapter]:
+    """The provider registry every part of the app shares — built once
+    here so ModelGateway, the evaluation lab, and the CLI's `models`
+    command never duplicate (or drift out of sync on) which providers
+    exist. Adapter construction is cheap (no network calls), so building
+    all four eagerly costs nothing even where only one ends up used."""
+    return {
+        "ollama": OllamaAdapter(),
+        "anthropic": AnthropicAdapter(),
+        "openai": OpenAIAdapter(),
+        "google": GoogleAdapter(),
+    }
+
+
 class ModelGateway:
     def __init__(self, router: ModelRouter | None = None, log_runs: bool = True) -> None:
         self.router = router or ModelRouter()
         self.log_runs = log_runs
-        self._adapters: dict[str, ProviderAdapter] = {
-            "ollama": OllamaAdapter(),
-            "anthropic": AnthropicAdapter(),
-            "openai": OpenAIAdapter(),
-            "google": GoogleAdapter(),
-        }
+        self._adapters: dict[str, ProviderAdapter] = build_default_adapters()
 
     def register_adapter(self, name: str, adapter: ProviderAdapter) -> None:
         self._adapters[name] = adapter

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 
+from research_os.core.json_utils import extract_json
 from research_os.core.logging_setup import get_logger
 from research_os.core.schema import ResearchItem
 from research_os.models.gateway import AllProvidersUnavailableError, ModelGateway
@@ -47,8 +48,9 @@ class SummarizerAgent:
                 privacy_level=item.privacy_level,
                 max_tokens=500,
             )
-            start, end = result.text.find("{"), result.text.rfind("}")
-            parsed = json.loads(result.text[start : end + 1])
+            parsed = extract_json(result.text)
+            if parsed is None:
+                raise ValueError("No JSON object found in model output")
             parsed["model_used"] = f"{result.provider}:{result.model}"
             return parsed
         except (AllProvidersUnavailableError, json.JSONDecodeError, ValueError) as exc:

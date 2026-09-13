@@ -124,7 +124,14 @@ def _document_to_item(doc: Document) -> ResearchItem:
     )
 
 
-def _iterate(session: Session, predicate, limit: int | None, handler: Callable[[Document], None], stats: PipelineStats) -> None:
+def _iterate(
+    session: Session, predicate, limit: int | None, handler: Callable[[Document], None], stats: PipelineStats,
+) -> list[Document]:
+    """Runs `handler` on every Document matching `predicate`, tracking
+    stats, and returns the documents it actually succeeded on — so a
+    caller that needs to do more work on just this batch (e.g. rescoring)
+    doesn't have to re-scan/re-filter the whole table again."""
+    touched: list[Document] = []
     stmt = select(Document)
     if limit:
         stmt = stmt.limit(limit)
@@ -134,11 +141,13 @@ def _iterate(session: Session, predicate, limit: int | None, handler: Callable[[
         try:
             handler(doc)
             stats.processed += 1
+            touched.append(doc)
         except Exception as exc:  # noqa: BLE001 - one bad doc must not stop the batch
             doc.processing_status = "error"
             stats.failed += 1
             stats.errors.append(f"doc={doc.external_id} error={exc}")
             logger.error("stage failed for %s: %s", doc.external_id, exc)
+    return touched
 
 
 # --------------------------------------------------------------- CLASSIFY --
@@ -185,27 +194,40 @@ def run_summarize(use_llm: bool = True, limit: int | None = None) -> PipelineSta
 
 # ------------------------------------------------------------------ ANALYZE --
 
-def _recompute_score(session: Session, doc: Document) -> None:
-    score_result = compute_score(
-        ScoreInput(
-            battery_relevance=doc.battery_relevance or 0.0,
-            transferability=doc.transferability or 0.0,
-            evidence_quality=doc.evidence_score or 0.0,
-            practical_applicability=doc.practical_score or 0.0,
-            novelty=doc.novelty_score or 0.0,
+def _recompute_scores(session: Session, docs: list[Document]) -> None:
+    """Recompute and upsert the Score row for each of `docs` that has been
+    analyzed (evidence_score set) — batching the "does a Score row already
+    exist" lookup into one query instead of one per document."""
+    relevant = [d for d in docs if d.evidence_score is not None]
+    if not relevant:
+        return
+
+    existing_by_doc_id = {
+        s.document_id: s
+        for s in session.scalars(select(Score).where(Score.document_id.in_(d.id for d in relevant))).all()
+    }
+
+    for doc in relevant:
+        score_result = compute_score(
+            ScoreInput(
+                battery_relevance=doc.battery_relevance or 0.0,
+                transferability=doc.transferability or 0.0,
+                evidence_quality=doc.evidence_score or 0.0,
+                practical_applicability=doc.practical_score or 0.0,
+                novelty=doc.novelty_score or 0.0,
+            )
         )
-    )
-    existing = session.scalars(select(Score).where(Score.document_id == doc.id)).first()
-    if existing is None:
-        existing = Score(document_id=doc.id)
-        session.add(existing)
-    existing.battery_relevance = doc.battery_relevance or 0.0
-    existing.transferability = doc.transferability or 0.0
-    existing.evidence_quality = doc.evidence_score or 0.0
-    existing.practical_applicability = doc.practical_score or 0.0
-    existing.novelty = doc.novelty_score or 0.0
-    existing.overall_score = score_result.overall_score
-    existing.priority = score_result.priority
+        existing = existing_by_doc_id.get(doc.id)
+        if existing is None:
+            existing = Score(document_id=doc.id)
+            session.add(existing)
+        existing.battery_relevance = doc.battery_relevance or 0.0
+        existing.transferability = doc.transferability or 0.0
+        existing.evidence_quality = doc.evidence_score or 0.0
+        existing.practical_applicability = doc.practical_score or 0.0
+        existing.novelty = doc.novelty_score or 0.0
+        existing.overall_score = score_result.overall_score
+        existing.priority = score_result.priority
 
 
 def run_analyze(use_llm: bool = True, limit: int | None = None) -> PipelineStats:
@@ -225,10 +247,8 @@ def run_analyze(use_llm: bool = True, limit: int | None = None) -> PipelineStats
         doc.model_used = analysis.get("model_used") or doc.model_used
 
     with session_scope() as session:
-        _iterate(session, lambda d: d.evidence_score is None, limit, handler, stats)
-        for doc in session.scalars(select(Document)).all():
-            if doc.evidence_score is not None:
-                _recompute_score(session, doc)
+        touched = _iterate(session, lambda d: d.evidence_score is None, limit, handler, stats)
+        _recompute_scores(session, touched)
     logger.info("analyze: processed=%d failed=%d", stats.processed, stats.failed)
     return stats
 
@@ -269,10 +289,8 @@ def run_transfer(use_llm: bool = True, limit: int | None = None) -> PipelineStat
         )
 
     with session_scope() as session:
-        _iterate(session, lambda d: d.transferability is None and d.industry is not None, limit, handler, stats)
-        for doc in session.scalars(select(Document)).all():
-            if doc.evidence_score is not None:
-                _recompute_score(session, doc)
+        touched = _iterate(session, lambda d: d.transferability is None and d.industry is not None, limit, handler, stats)
+        _recompute_scores(session, touched)
     logger.info("transfer: processed=%d failed=%d", stats.processed, stats.failed)
     return stats
 

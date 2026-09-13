@@ -6,9 +6,10 @@ are documented as heuristic in every report generated from them.
 """
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
+
+from research_os.core.json_utils import extract_json
 
 _THINK_TAG_PATTERN = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
@@ -44,22 +45,6 @@ _JSON_REQUIRED_KEYS = {
 }
 
 
-def _extract_json(text: str):
-    start_obj, end_obj = text.find("{"), text.rfind("}")
-    start_arr, end_arr = text.find("["), text.rfind("]")
-    candidates = []
-    if start_obj != -1 and end_obj != -1:
-        candidates.append(text[start_obj : end_obj + 1])
-    if start_arr != -1 and end_arr != -1:
-        candidates.append(text[start_arr : end_arr + 1])
-    for candidate in candidates:
-        try:
-            return json.loads(candidate)
-        except json.JSONDecodeError:
-            continue
-    return None
-
-
 def _korean_ratio(text: str) -> float:
     if not text:
         return 0.0
@@ -72,7 +57,7 @@ def score_json_response(task_key: str, response_text: str) -> float:
     """0-100: JSON parses (40) + required keys present (40, split evenly) +
     non-empty values (20)."""
     required = _JSON_REQUIRED_KEYS.get(task_key)
-    parsed = _extract_json(response_text)
+    parsed = extract_json(response_text)
     if parsed is None:
         return 0.0
     if required is None:
@@ -111,7 +96,7 @@ def score_technical_accuracy(task_key: str, response_text: str) -> float | None:
     (config/industries.yaml etc.) rather than hallucinated categories."""
     from research_os.core.config import industries_config, problems_config, technologies_config
 
-    parsed = _extract_json(response_text)
+    parsed = extract_json(response_text)
     if parsed is None or not isinstance(parsed, dict):
         return None
 

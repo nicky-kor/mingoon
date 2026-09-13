@@ -13,7 +13,6 @@ import feedparser
 import httpx
 
 from research_os.collectors.base import Collector, CollectorError
-from research_os.core.config import system_config
 from research_os.core.logging_setup import get_logger
 
 logger = get_logger("collectors.arxiv")
@@ -31,7 +30,7 @@ class ArxivCollector(Collector):
         timeout: float = 20.0,
         max_retries: int = 2,
     ) -> None:
-        cfg = system_config().get("sources", {}).get("arxiv", {})
+        cfg = self._source_config("arxiv")
         self.categories = categories if categories is not None else cfg.get("categories", ["cs.AI"])
         self.max_results = max_results if max_results is not None else cfg.get("max_results_per_run", 25)
         self.base_url = base_url or cfg.get("base_url", "http://export.arxiv.org/api/query")

@@ -10,21 +10,17 @@ from research_os.agents.briefing import BriefingAgent
 from research_os.agents.trend import TrendAgent
 from research_os.core.paths import resolve
 from research_os.core.timeutils import utc_now
-from research_os.database.models import Document, Score, TransferOpportunity
+from research_os.database.models import TransferOpportunity
 from research_os.knowledge.skills import LEVEL_LABELS, list_skills
 from research_os.models.gateway import ModelGateway
+from research_os.reports._shared import fetch_scored_documents
 
 
 def generate_weekly_report(session: Session, use_llm: bool = True) -> str:
     now = utc_now()
     since = now - dt.timedelta(days=7)
 
-    docs = session.scalars(select(Document).where(Document.collected_at >= since)).all()
-    scored = []
-    for d in docs:
-        score = session.scalars(select(Score).where(Score.document_id == d.id)).first()
-        scored.append((d, score))
-    scored.sort(key=lambda pair: pair[1].overall_score if pair[1] else -1, reverse=True)
+    scored = fetch_scored_documents(session, since)
 
     trend = TrendAgent().analyze(session, window_days=7)
     transfers = session.scalars(select(TransferOpportunity).where(TransferOpportunity.created_at >= since)).all()
@@ -32,7 +28,7 @@ def generate_weekly_report(session: Session, use_llm: bool = True) -> str:
 
     gateway = ModelGateway() if use_llm else None
     briefing = BriefingAgent(gateway)
-    facts = [f"{len(docs)} documents collected this week", f"top technologies: {trend['top_technologies']}"]
+    facts = [f"{len(scored)} documents collected this week", f"top technologies: {trend['top_technologies']}"]
     summary = briefing.executive_summary(facts)
 
     battery_docs = [d for d, _ in scored if d.industry == "battery_manufacturing"]

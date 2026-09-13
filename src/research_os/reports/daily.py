@@ -11,18 +11,11 @@ from research_os.core.paths import resolve
 from research_os.core.timeutils import utc_now
 from research_os.database.models import Document, Score, TransferOpportunity
 from research_os.models.gateway import ModelGateway
+from research_os.reports._shared import fetch_scored_documents
 
 
 def _top_documents(session: Session, since: dt.datetime, limit: int = 10) -> list[tuple[Document, Score | None]]:
-    docs = session.scalars(
-        select(Document).where(Document.collected_at >= since)
-    ).all()
-    scored = []
-    for d in docs:
-        score = session.scalars(select(Score).where(Score.document_id == d.id)).first()
-        scored.append((d, score))
-    scored.sort(key=lambda pair: pair[1].overall_score if pair[1] else -1, reverse=True)
-    return scored[:limit]
+    return fetch_scored_documents(session, since)[:limit]
 
 
 def generate_daily_report(session: Session, use_llm: bool = True) -> str:

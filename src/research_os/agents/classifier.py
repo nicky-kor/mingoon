@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 
 from research_os.core.config import industries_config, problems_config, technologies_config
+from research_os.core.json_utils import extract_json
 from research_os.core.logging_setup import get_logger
 from research_os.core.schema import ResearchItem
 from research_os.models.gateway import AllProvidersUnavailableError, ModelGateway
@@ -69,7 +70,9 @@ class ClassifierAgent:
                 privacy_level=item.privacy_level,
                 max_tokens=300,
             )
-            parsed = json.loads(_extract_json(result.text))
+            parsed = extract_json(result.text)
+            if parsed is None:
+                raise ValueError("No JSON object found in model output")
             return {
                 "industry": parsed.get("industry"),
                 "technology": parsed.get("technology"),
@@ -81,10 +84,3 @@ class ClassifierAgent:
         except (AllProvidersUnavailableError, json.JSONDecodeError, KeyError, ValueError) as exc:
             logger.info("classifier falling back to rule-based: %s", exc)
             return self._rule_based(item)
-
-
-def _extract_json(text: str) -> str:
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end == -1:
-        raise ValueError("No JSON object found in model output")
-    return text[start : end + 1]
