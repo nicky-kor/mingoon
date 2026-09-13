@@ -261,6 +261,23 @@ class LLMCache(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_now)
 
 
+class ProviderCircuitBreaker(Base):
+    """Remembers a provider-level failure that a retry won't fix (out of
+    cloud credit, invalid API key, ...) so ModelGateway can skip straight
+    to the next tier in the fallback chain instead of repeating the same
+    failing call on every request — persisted here (not in-memory) since
+    every `research-os` invocation is a fresh process. Clears itself once
+    `tripped_until` passes, so cloud is retried automatically the first
+    time it's needed after the cooldown (e.g. once credit is topped up)."""
+
+    __tablename__ = "provider_circuit_breaker"
+
+    provider: Mapped[str] = mapped_column(String(50), primary_key=True)
+    tripped_until: Mapped[dt.datetime] = mapped_column(DateTime)
+    reason: Mapped[str] = mapped_column(Text)
+    tripped_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_now)
+
+
 class ModelBenchmark(Base):
     __tablename__ = "model_benchmarks"
 

@@ -65,13 +65,19 @@ escalation:
   cloud_standard: [cloud_reasoning]
   cloud_reasoning: [cloud_deep_research]
 
-# Fallback chain used purely for availability failures (e.g. Ollama down),
-# independent of escalation-for-difficulty above.
+# Fallback chain used purely for availability failures (e.g. Ollama down,
+# or a cloud provider's circuit breaker tripped on an unrecoverable error
+# like insufficient credit — see models/circuit_breaker.py), independent
+# of escalation-for-difficulty above. cloud_reasoning/cloud_deep_research
+# both end in local_reasoning rather than dead-ending in cloud: without
+# that, an agent whose default tier is cloud_reasoning would exhaust
+# straight through cloud_deep_research (same provider, so the breaker
+# skips it just as fast) and never reach a local model at all.
 fallback:
   local_fast: [cloud_fast]
   local_standard: [cloud_standard]
   local_reasoning: [cloud_reasoning]
   cloud_fast: [cloud_standard]
   cloud_standard: [cloud_reasoning]
-  cloud_reasoning: [cloud_deep_research]
-  cloud_deep_research: []
+  cloud_reasoning: [cloud_deep_research, local_reasoning]
+  cloud_deep_research: [local_reasoning]

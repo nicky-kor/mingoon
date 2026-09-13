@@ -52,8 +52,10 @@ def test_models_config_has_all_tiers():
 
 def test_routing_config_has_agent_defaults():
     agent_defaults = routing_config()["agent_defaults"]
-    # Reasoning-heavy agents default to local_reasoning (free) rather than
-    # a cloud tier — see the comment above agent_defaults in
-    # config/routing.yaml for why, and how to switch back to cloud.
-    assert agent_defaults["AnalystAgent"] == "local_reasoning"
+    # Reasoning-heavy agents default to cloud (better quality) — see the
+    # comment above agent_defaults in config/routing.yaml. No manual
+    # "no budget, use local" edit is needed: ModelGateway's circuit
+    # breaker (models/circuit_breaker.py) detects an unrecoverable cloud
+    # failure and automatically routes to local for a cooldown.
+    assert agent_defaults["AnalystAgent"] == "cloud_reasoning"
     assert agent_defaults["ClassifierAgent"] == "local_fast"
