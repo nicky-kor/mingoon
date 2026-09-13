@@ -36,7 +36,12 @@ class AnthropicAdapter(ProviderAdapter):
                 max_tokens=request.max_tokens,
                 system=request.system or "",
                 messages=[{"role": "user", "content": request.prompt}],
-                temperature=request.temperature,
+                # `temperature` was dropped from the typed messages.create()
+                # signature in newer anthropic SDK releases (the Claude 5
+                # generation's client) — passed via extra_body instead,
+                # which forwards it straight into the request JSON, since
+                # the underlying API still accepts it.
+                extra_body={"temperature": request.temperature},
             )
         except Exception as exc:  # noqa: BLE001
             raise ModelUnavailableError(f"Anthropic call failed ({model}): {exc}") from exc
