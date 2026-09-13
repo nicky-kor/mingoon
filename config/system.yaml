@@ -33,10 +33,22 @@ sources:
       - "stat.ML"
     max_results_per_run: 25
   rss:
-    enabled: false
-    feeds: []
+    # arXiv-independent sources (different hosts entirely, so arXiv's own
+    # rate limiting never affects these): MIT News AI, IEEE Spectrum AI,
+    # ScienceDaily AI, and Nature Machine Intelligence. RSSCollector skips
+    # any single feed that fails to fetch/parse (logs a warning) rather
+    # than failing the whole run, so a stale URL here costs nothing beyond
+    # that one source's items for this run — still worth confirming these
+    # resolve from wherever this actually runs, since a fully sandboxed
+    # dev environment may not have the same general internet access.
+    enabled: true
+    feeds:
+      - "https://news.mit.edu/rss/topic/artificial-intelligence2"
+      - "https://spectrum.ieee.org/feeds/topic/artificial-intelligence.rss"
+      - "https://www.sciencedaily.com/rss/computers_math/artificial_intelligence.xml"
+      - "https://www.nature.com/natmachintell.rss"
   github:
-    enabled: false
+    enabled: true
     api_url: "https://api.github.com/search/repositories"
     topics:
       - "industrial AI"
