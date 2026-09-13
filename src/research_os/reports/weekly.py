@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -82,6 +83,10 @@ def generate_weekly_report(session: Session, use_llm: bool = True) -> str:
 
     lines += ["", "## 13. Recommended Deep Research Topics"]
     lines += [f"- {tech} applied to Battery Manufacturing" for tech, _ in trend["top_technologies"][:3]] or ["- Not enough data yet."]
+
+    lines += ["", "## 14. QA Flags"]
+    flagged = [d for d, _ in scored if d.qa_status == "flagged"]
+    lines += [f"- {d.title}: {'; '.join(json.loads(d.qa_flags))}" for d in flagged] or ["- No documents flagged this week."]
 
     return "\n".join(lines) + "\n"
 

@@ -80,6 +80,7 @@ def status() -> None:
         analyzed = session.scalar(select(func.count()).select_from(Document).where(Document.status == "analyzed")) or 0
         pending = session.scalar(select(func.count()).select_from(Document).where(Document.status != "analyzed")) or 0
         failed = session.scalar(select(func.count()).select_from(Document).where(Document.processing_status == "error")) or 0
+        qa_flagged = session.scalar(select(func.count()).select_from(Document).where(Document.qa_status == "flagged")) or 0
 
         local_calls = session.scalar(select(func.count()).select_from(LLMRun).where(LLMRun.provider == "ollama")) or 0
         cloud_calls = session.scalar(
@@ -108,6 +109,7 @@ def status() -> None:
     typer.echo(f"  Analyzed:  {analyzed}")
     typer.echo(f"  Pending:   {pending}")
     typer.echo(f"  Failed:    {failed}")
+    typer.echo(f"  QA flagged: {qa_flagged}")
     typer.echo("")
     typer.echo("LLM:")
     typer.echo(f"  Local (Ollama):    {'available' if local_available else 'not available'}")
@@ -207,8 +209,17 @@ def transfer(no_llm: bool = typer.Option(False, "--no-llm")) -> None:
 
 
 @app.command()
+def qa() -> None:
+    """Run the QA grounding check over analyzed documents (flags, never blocks)."""
+    setup_logging()
+    init_db()
+    stats = pipeline.run_qa_check()
+    typer.echo(f"QA check: processed={stats.processed} failed={stats.failed}")
+
+
+@app.command()
 def run(no_llm: bool = typer.Option(False, "--no-llm", help="Skip LLM calls, use rule-based fallback only")) -> None:
-    """Run the full pipeline: collect -> classify -> summarize -> analyze -> transfer -> store."""
+    """Run the full pipeline: collect -> classify -> summarize -> analyze -> transfer -> qa -> store."""
     setup_logging()
     init_db()
     result = pipeline.run_full_pipeline(use_llm=not no_llm)

@@ -39,6 +39,7 @@ def test_full_pipeline_runs_without_llm(isolated_db, monkeypatch):
     assert result["summarize"].processed == 1
     assert result["analyze"].processed == 1
     assert result["transfer"].processed == 1
+    assert result["qa"].processed == 1
     assert result["stored"] == 1
 
     with isolated_db.session_scope() as session:
@@ -48,6 +49,16 @@ def test_full_pipeline_runs_without_llm(isolated_db, monkeypatch):
         assert doc.status == "analyzed"
         assert doc.industry == "steel"
         assert doc.summary is not None
+
+        # TransferAgent must reuse ClassifierAgent's own target_process
+        # (via the DB round-trip in _document_to_item) rather than
+        # re-guessing it independently — the two must agree.
+        assert doc.candidate_process == doc.target_process
+
+        # The sample abstract's "96%" is copied verbatim into the
+        # heuristic summary/key_findings, so QA should find nothing
+        # unsupported and pass cleanly.
+        assert doc.qa_status == "passed"
 
         scores = session.scalars(select(Score)).all()
         assert len(scores) == 1

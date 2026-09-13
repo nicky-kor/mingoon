@@ -50,6 +50,7 @@ data we haven't collected.
 | TrendAgent | *(none — no LLM call; see agents/trend.py)* |
 | ResearchAgent | cloud_deep_research |
 | BriefingAgent | cloud_reasoning |
+| QAAgent | *(none — no LLM call; see agents/qa.py)* |
 
 ## Adding a provider
 

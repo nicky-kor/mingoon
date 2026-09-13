@@ -21,9 +21,11 @@ agent_defaults:
   # automatically.
   AnalystAgent: cloud_reasoning
   TransferAgent: cloud_reasoning
-  # TrendAgent has no entry here on purpose — it never calls ModelGateway
-  # (agents/trend.py): its output is DB counts and period-over-period
-  # deltas, which an LLM would not make any more trustworthy.
+  # TrendAgent and QAAgent have no entry here on purpose — neither calls
+  # ModelGateway (agents/trend.py, agents/qa.py): TrendAgent's output is
+  # DB counts/deltas, and QAAgent's job is specifically to catch an LLM
+  # inventing something, so checking it with another LLM call would trade
+  # one hallucination-prone step for two. Both stay deterministic.
   ResearchAgent: cloud_deep_research
   BriefingAgent: cloud_reasoning
 

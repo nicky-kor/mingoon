@@ -67,6 +67,10 @@ class ResearchItem(BaseModel):
     knowledge_gaps: str | None = None
     related_items: list[str] = Field(default_factory=list)
 
+    # --- QA (grounding check over the generated fields above, agents/qa.py) ---
+    qa_status: str | None = None
+    qa_flags: list[str] = Field(default_factory=list)
+
     # --- Operational ---
     privacy_level: PrivacyLevel = "public"
     status: str = "collected"

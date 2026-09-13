@@ -26,3 +26,6 @@ agents:
   - name: BriefingAgent
     enabled: true
     description: "Generates daily/weekly briefing reports."
+  - name: QAAgent
+    enabled: true
+    description: "Grounding check: flags generated claims (mainly numbers) not found in the source text. Flags for review, never blocks the pipeline."

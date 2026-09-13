@@ -115,6 +115,10 @@ class Document(Base):
     knowledge_gaps: Mapped[str | None] = mapped_column(Text, nullable=True)
     related_items: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
 
+    # --- QA (grounding check over the generated fields above, agents/qa.py) ---
+    qa_status: Mapped[str | None] = mapped_column(String(20), nullable=True)  # passed | flagged
+    qa_flags: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list of reasons
+
     # --- Operational ---
     privacy_level: Mapped[str] = mapped_column(String(20), default="public")
     status: Mapped[str] = mapped_column(String(30), default="collected")
