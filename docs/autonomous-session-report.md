@@ -214,7 +214,39 @@ output) that hadn't shown up in the sandbox's older Python — fixed in
 commit `42e9037` (see "Bugs Fixed" above) and reverified on the PC:
 `pytest` went from 106 passed/67 warnings to **107 passed/0 warnings**.
 
-Remaining, not yet done (optional, not blocking): benchmarking a
-dedicated reasoning-oriented model (e.g. `deepseek-r1:7b`) against the
-7B general model for the `local_reasoning` role specifically, and
-verifying the cloud fallback tiers with a real `ANTHROPIC_API_KEY`.
+Remaining, not yet done (optional, not blocking): verifying the cloud
+fallback tiers with a real `ANTHROPIC_API_KEY`.
+
+## Round 5: deepseek-r1:7b added, and a real benchmark-fairness bug found
+
+At the user's request, `deepseek-r1:7b` was pulled and benchmarked
+against the two qwen2.5 models as a dedicated reasoning candidate. First
+attempt: quality=17, korean=0, stability=30%, won no role — looking like
+a broken/bad model. It wasn't the model; the benchmark harness was unfair
+to it: a 400-token cap and Ollama's default 60s timeout starved a model
+that emits a long `<think>...</think>` trace before its actual answer
+(consistent with ~2/6 calls plausibly timing out outright, matching the
+30% stability).
+
+Fixed in commit `42ef001`: raised the token budget (400 → 1500) and the
+benchmark's HTTP timeout (60s → 180s) uniformly for every model (still
+fair — same generous budget for all, not special-cased for one), and
+added `evaluation/scoring.strip_reasoning_preamble()` to strip
+`<think>...</think>` before scoring so a model is judged on its answer,
+not penalized for showing its work. Added a regression test asserting a
+`<think>`-wrapped answer scores identically to the same answer without
+the wrapping (112 tests total, up from 107).
+
+Re-run on the PC with the fix: `deepseek-r1:7b` recovered to quality=78,
+stability=100% (confirming the harness was the problem) but still won no
+role — it answered the Korean task in English (korean_quality=0, a known
+trait of some R1 distillations on non-English prompts) and is 3-4x
+slower than either qwen2.5 model. Real conclusion, not a benchmark
+artifact this time: `qwen2.5:7b-instruct` genuinely is the better
+`local_reasoning` choice for this project's actual (Korean+English)
+workload, despite `deepseek-r1:7b`'s "reasoning" branding.
+`config/models.yaml` is unchanged (`benchmark-apply` confirmed "already
+matches"). `pytest`: 112/112 passing on the PC, 0 warnings.
+
+Full detail and the exact before/after numbers: `docs/local-llm.md`'s
+"Round 2" section.

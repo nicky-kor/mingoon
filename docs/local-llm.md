@@ -13,6 +13,8 @@ real on the target PC and the results are in `config/models.yaml`:
 | OS | Windows 11 |
 | Ollama | 0.34.0, installed and running |
 
+**Round 1 (2 models: qwen2.5:3b-instruct, qwen2.5:7b-instruct):**
+
 | Role | Model | Quality | Korean | Latency | Composite |
 |---|---|---|---|---|---|
 | `local_fast` | `qwen2.5:3b-instruct` | 94 | 90 | 4931 ms | **84** |
@@ -22,18 +24,45 @@ real on the target PC and the results are in `config/models.yaml`:
 The 3B model won `local_fast` on speed despite slightly lower raw quality
 (the composite score weights latency); the 7B model won `local_standard`/
 `local_reasoning` on quality — exactly the split the design intended.
-Applied via `research-os benchmark-apply` (only the `local_reasoning` line
-actually changed — `local_fast`/`local_standard` already matched
-`config/models.yaml`'s defaults). Full report:
-`data/reports/model-benchmark.md` on that machine. `pytest` — 107/107
-passing on Python 3.14.7, the PC's actual interpreter version (a
-`datetime.utcnow()` deprecation surfaced by that newer Python was found
-and fixed in the process — see `docs/autonomous-session-report.md`).
 
-Not yet benchmarked: a dedicated reasoning-oriented candidate (e.g.
-`deepseek-r1:7b`) — `local_reasoning` currently just reuses the 7B
-general model since nothing more specialized has been tested yet. Cloud
-tiers are also unverified (`ANTHROPIC_API_KEY` not set on that machine).
+**Round 2 (added deepseek-r1:7b as a dedicated reasoning candidate):**
+
+First attempt gave deepseek-r1:7b quality=17, korean=0, stability=30% —
+looking broken. It wasn't the model; it was the benchmark: a 400-token
+cap and Ollama's default 60s timeout starved a model that emits a long
+`<think>...</think>` trace before its actual answer (some of its 6 calls
+plausibly timed out before ever finishing). Fixed by raising the (same
+for every model) token budget to 1500 and the benchmark's timeout to
+180s, and stripping `<think>` blocks before scoring
+(`evaluation/scoring.strip_reasoning_preamble`) — see commit `42ef001`.
+Re-run with the fix:
+
+| Model | Role won | Quality | Korean | Latency | Composite |
+|---|---|---|---|---|---|
+| `deepseek-r1:7b` | *(none)* | 78 | **0** | 21982 ms | 53 |
+| `qwen2.5:7b-instruct` | local_standard, local_reasoning | 100 | 89 | 8319 ms | **82** |
+| `qwen2.5:3b-instruct` | local_fast | 93 | 99 | 5061 ms | **84** |
+
+Quality/stability recovered dramatically once the harness was fair
+(17→78, 30%→100%) — confirming it really was a benchmark bug, not the
+model. But `deepseek-r1:7b` still doesn't win any role here: it answered
+the Korean-summary task in English (korean_quality=0 — a known trait of
+some R1 distillations on non-English prompts) and is 3-4x slower than
+either qwen2.5 model. For *this* project's actual workload (Korean +
+English industrial-AI research assistant tasks), `qwen2.5:7b-instruct`
+remains the better `local_reasoning` choice despite being the "general"
+rather than "reasoning-branded" model — `config/models.yaml` is
+unchanged from Round 1 (`benchmark-apply` confirmed "already matches").
+
+Full reports: `data/reports/model-benchmark.md` on that machine (each
+`evaluate` run overwrites it — the numbers above are what each run
+printed to the console at the time). `pytest` — 112/112 passing on
+Python 3.14.7, the PC's actual interpreter version (a `datetime.utcnow()`
+deprecation surfaced by that newer Python was found and fixed along the
+way — see `docs/autonomous-session-report.md`).
+
+Cloud tiers are still unverified (`ANTHROPIC_API_KEY` not set on that
+machine).
 
 ## Where this actually runs
 
