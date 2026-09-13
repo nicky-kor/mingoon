@@ -10,7 +10,33 @@ from research_os.evaluation.scoring import (
     score_reasoning_response,
     score_technical_accuracy,
     stability_score,
+    strip_reasoning_preamble,
 )
+
+
+def test_strip_reasoning_preamble_removes_think_block():
+    raw = "<think>hmm let me consider the options here</think>" + json.dumps({"industry": "steel"})
+    stripped = strip_reasoning_preamble(raw)
+    assert "<think>" not in stripped
+    assert "hmm let me consider" not in stripped
+    assert json.loads(stripped) == {"industry": "steel"}
+
+
+def test_strip_reasoning_preamble_handles_multiline_and_case_insensitive():
+    raw = "<THINK>\nline one\nline two\n</THINK>\nfinal answer"
+    assert strip_reasoning_preamble(raw) == "final answer"
+
+
+def test_strip_reasoning_preamble_leaves_plain_text_untouched():
+    assert strip_reasoning_preamble("no think tags here") == "no think tags here"
+
+
+def test_strip_reasoning_preamble_falls_back_to_raw_text_if_all_preamble():
+    raw = "<think>only thinking, no final answer at all</think>"
+    # Nothing left after stripping — still return something scoreable
+    # (a score of 0 for empty content) rather than an empty string that
+    # would look identical to "no response at all".
+    assert strip_reasoning_preamble(raw) == raw
 
 
 def test_score_json_response_full_marks():

@@ -84,6 +84,52 @@ def test_run_local_benchmark_end_to_end_with_fake_ollama(monkeypatch, isolated_d
     assert "Best Model for local_fast" in report
 
 
+def _wrap_in_think_tags(generate_fn):
+    """Simulates a reasoning model (e.g. DeepSeek-R1) that prepends a long
+    <think>...</think> trace before its actual answer."""
+
+    def wrapped(self, request, model):
+        result = generate_fn(self, request, model)
+        thinking = "<think>\nLet me work through this step by step...\n</think>\n"
+        return GenerationResult(
+            text=thinking + result.text, provider=result.provider, model=result.model,
+            latency_ms=result.latency_ms, output_tokens=result.output_tokens,
+        )
+
+    return wrapped
+
+
+def test_reasoning_model_with_think_tags_scores_like_its_stripped_answer(monkeypatch, isolated_db):
+    """Regression test: a model that wraps every answer in <think> tags
+    must not be unfairly scored near-zero just because of that wrapping —
+    the benchmark should strip it and score the actual answer underneath,
+    the same way it would score a non-thinking model's identical answer."""
+    monkeypatch.setattr(OllamaAdapter, "is_available", lambda self: True)
+    monkeypatch.setattr(OllamaAdapter, "get_version", lambda self: "0.1.0")
+    monkeypatch.setattr(
+        OllamaAdapter, "list_models",
+        lambda self: [
+            {"name": "plain-model:3b", "size": 2_000_000_000},
+            {"name": "thinking-model:7b", "size": 4_000_000_000},
+        ],
+    )
+
+    plain_fn = _fake_generate_factory()
+
+    def fake_generate(self, request, model):
+        if model == "thinking-model:7b":
+            return _wrap_in_think_tags(plain_fn)(self, request, model)
+        return plain_fn(self, request, model)
+
+    monkeypatch.setattr(OllamaAdapter, "generate", fake_generate)
+
+    result = local_benchmark.run_local_benchmark()
+    by_name = {m.model: m for m in result.models}
+
+    assert by_name["plain-model:3b"].avg_quality == by_name["thinking-model:7b"].avg_quality
+    assert by_name["thinking-model:7b"].avg_quality > 50  # not near-zero despite the <think> wrapping
+
+
 def test_derive_role_selection_from_db_after_benchmark(monkeypatch, isolated_db):
     monkeypatch.setattr(OllamaAdapter, "is_available", lambda self: True)
     monkeypatch.setattr(OllamaAdapter, "get_version", lambda self: "0.1.0")

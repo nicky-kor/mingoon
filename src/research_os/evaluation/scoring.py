@@ -10,6 +10,22 @@ import json
 import re
 from dataclasses import dataclass
 
+_THINK_TAG_PATTERN = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+
+def strip_reasoning_preamble(text: str) -> str:
+    """Reasoning models (e.g. DeepSeek-R1) wrap an internal "thinking"
+    trace in <think>...</think> before the actual answer. Scoring the raw
+    text would count that preamble as the response (diluting Korean-ratio
+    checks, tripping up JSON extraction if the trace happens to contain
+    stray braces, etc.) — strip it so every model is scored on its actual
+    answer, not its scratch work."""
+    if not text:
+        return text
+    stripped = _THINK_TAG_PATTERN.sub("", text).strip()
+    return stripped if stripped else text  # an all-preamble, no-answer response still needs scoring
+
+
 # spec section 10 weights
 WEIGHTS = {
     "quality": 0.30,

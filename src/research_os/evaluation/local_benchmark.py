@@ -129,11 +129,23 @@ class LocalBenchmarkResult:
     limitations: list[str]
 
 
+
+# Reasoning-oriented models (e.g. DeepSeek-R1) emit a long internal
+# "thinking" trace before the actual answer — a tight max_tokens budget
+# cuts that off before the model ever reaches its answer, and a short
+# HTTP timeout can abort the call outright, which looks like the model
+# failing when it's really the benchmark being unfair to a verbose model.
+# Same budget/timeout for every model (fairness), just generous enough
+# that a thinking-model's answer isn't truncated away.
+_BENCHMARK_MAX_TOKENS = 1500
+_BENCHMARK_TIMEOUT_SECONDS = 180.0
+
+
 def _run_one(adapter: OllamaAdapter, model: str, task_key: str) -> TaskRunResult:
     case = ds.get_case(_TASK_CASE[task_key])
     category = case.category if case else task_key
     prompt = build_prompt(task_key, case)
-    request = GenerationRequest(prompt=prompt, max_tokens=400, temperature=0.2)
+    request = GenerationRequest(prompt=prompt, max_tokens=_BENCHMARK_MAX_TOKENS, temperature=0.2)
 
     start = time.monotonic()
     try:
@@ -145,12 +157,14 @@ def _run_one(adapter: OllamaAdapter, model: str, task_key: str) -> TaskRunResult
             quality=None, technical_accuracy=None, korean_quality=None, error=str(exc),
         )
 
+    answer_text = scoring.strip_reasoning_preamble(result.text)
+
     if task_key == "reasoning":
-        quality = scoring.score_reasoning_response(result.text)
+        quality = scoring.score_reasoning_response(answer_text)
     else:
-        quality = scoring.score_json_response(task_key, result.text)
-    technical_accuracy = scoring.score_technical_accuracy(task_key, result.text)
-    korean_quality = scoring.score_korean_quality(task_key, result.text)
+        quality = scoring.score_json_response(task_key, answer_text)
+    technical_accuracy = scoring.score_technical_accuracy(task_key, answer_text)
+    korean_quality = scoring.score_korean_quality(task_key, answer_text)
 
     return TaskRunResult(
         task=task_key, category=category, success=True, latency_ms=result.latency_ms,
@@ -160,7 +174,11 @@ def _run_one(adapter: OllamaAdapter, model: str, task_key: str) -> TaskRunResult
 
 
 def run_local_benchmark(ollama_base_url: str | None = None) -> LocalBenchmarkResult:
-    adapter = OllamaAdapter(base_url=ollama_base_url) if ollama_base_url else OllamaAdapter()
+    adapter = (
+        OllamaAdapter(base_url=ollama_base_url, timeout=_BENCHMARK_TIMEOUT_SECONDS)
+        if ollama_base_url
+        else OllamaAdapter(timeout=_BENCHMARK_TIMEOUT_SECONDS)
+    )
     limitations: list[str] = []
     hardware = env_info.summary()
 
