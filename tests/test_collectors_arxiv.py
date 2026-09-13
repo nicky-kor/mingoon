@@ -15,20 +15,24 @@ FIXTURE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 class FakeResponse:
-    def __init__(self, text: str, status_code: int = 200):
+    def __init__(self, text: str, status_code: int = 200, headers: dict | None = None):
         self.text = text
         self.status_code = status_code
+        self.headers = headers or {}
 
     def raise_for_status(self):
         if self.status_code >= 400:
-            raise RuntimeError(f"HTTP {self.status_code}")
+            import httpx
+
+            raise httpx.HTTPStatusError(f"HTTP {self.status_code}", request=None, response=self)
 
 
 def test_arxiv_collector_parses_entries(monkeypatch):
     captured = {}
 
-    def fake_get(url, params=None, timeout=None, follow_redirects=None):
+    def fake_get(url, params=None, headers=None, timeout=None, follow_redirects=None):
         captured["follow_redirects"] = follow_redirects
+        captured["headers"] = headers
         return FakeResponse(FIXTURE_XML)
 
     monkeypatch.setattr(arxiv_module.httpx, "get", fake_get)
@@ -50,6 +54,9 @@ def test_arxiv_collector_parses_entries(monkeypatch):
     # broke real collection in production before follow_redirects=True
     # was added.
     assert captured["follow_redirects"] is True
+    # Regression guard: an anonymous User-Agent is more likely to be
+    # rate-limited (429) by arXiv's API — see test_retry_delay_* below.
+    assert "User-Agent" in captured["headers"]
 
 
 def test_arxiv_collector_default_base_url_is_https():
@@ -76,7 +83,7 @@ def test_arxiv_collector_with_empty_categories_makes_no_network_call(monkeypatch
 
 
 def test_arxiv_collector_run_never_raises_on_network_error(monkeypatch):
-    def fake_get(url, params=None, timeout=None, follow_redirects=None):
+    def fake_get(url, params=None, headers=None, timeout=None, follow_redirects=None):
         raise ConnectionError("network down")
 
     monkeypatch.setattr(arxiv_module.httpx, "get", fake_get)
@@ -84,3 +91,39 @@ def test_arxiv_collector_run_never_raises_on_network_error(monkeypatch):
     collector = arxiv_module.ArxivCollector(categories=["cs.LG"], max_retries=0)
     items = collector.run()
     assert items == []
+
+
+def test_arxiv_collector_retries_after_429_and_then_succeeds(monkeypatch):
+    calls = {"count": 0}
+    sleeps: list[float] = []
+
+    def fake_get(url, params=None, headers=None, timeout=None, follow_redirects=None):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return FakeResponse("rate limited", status_code=429, headers={"Retry-After": "3"})
+        return FakeResponse(FIXTURE_XML)
+
+    monkeypatch.setattr(arxiv_module.httpx, "get", fake_get)
+    monkeypatch.setattr(arxiv_module.time, "sleep", lambda seconds: sleeps.append(seconds))
+
+    collector = arxiv_module.ArxivCollector(categories=["cs.LG"])
+    items = collector.collect()
+
+    assert len(items) == 1  # succeeded on the second attempt
+    # Regression guard: a 429 must back off using Retry-After (here 3s),
+    # not the short generic-error backoff — retrying a rate limit quickly
+    # just gets rate-limited again (this is what broke real collection:
+    # two attempts ~2s apart both got 429).
+    assert sleeps == [3.0]
+
+
+def test_retry_delay_honors_retry_after_header():
+    response = FakeResponse("", status_code=429, headers={"Retry-After": "7"})
+    assert arxiv_module.ArxivCollector._retry_delay(1, response) == 7.0
+
+
+def test_retry_delay_backs_off_harder_for_429_without_retry_after():
+    response = FakeResponse("", status_code=429)
+    generic_delay = arxiv_module.ArxivCollector._retry_delay(1, None)
+    rate_limited_delay = arxiv_module.ArxivCollector._retry_delay(1, response)
+    assert rate_limited_delay > generic_delay

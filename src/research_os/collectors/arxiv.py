@@ -17,6 +17,11 @@ from research_os.core.logging_setup import get_logger
 
 logger = get_logger("collectors.arxiv")
 
+# arXiv's API Terms of Use ask clients to identify themselves via
+# User-Agent (https://info.arxiv.org/help/api/tou.html) — an anonymous
+# default UA (httpx's own) is more likely to get rate-limited (429).
+_USER_AGENT = "manufacturing-ai-research-os/0.1 (personal research project; https://github.com/nicky-kor/mingoon)"
+
 
 class ArxivCollector(Collector):
     source_type = "arxiv"
@@ -40,6 +45,22 @@ class ArxivCollector(Collector):
     def _build_query(self) -> str:
         return " OR ".join(f"cat:{c}" for c in self.categories)
 
+    @staticmethod
+    def _retry_delay(attempt: int, response: httpx.Response | None) -> float:
+        """arXiv's rate limiting (HTTP 429) needs a longer, Retry-After-aware
+        backoff than a generic network hiccup — retrying a 429 quickly just
+        gets rate-limited again (this is exactly what happened before this
+        was added: two attempts ~2s apart both got 429, the third timed out)."""
+        if response is not None and response.status_code == 429:
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                try:
+                    return float(retry_after)
+                except ValueError:
+                    pass
+            return 15.0 * attempt
+        return min(5.0 * attempt, 30.0)
+
     def _fetch(self) -> str:
         params = {
             "search_query": self._build_query(),
@@ -48,16 +69,25 @@ class ArxivCollector(Collector):
             "sortBy": "submittedDate",
             "sortOrder": "descending",
         }
+        headers = {"User-Agent": _USER_AGENT}
         last_exc: Exception | None = None
         for attempt in range(1, self.max_retries + 2):
             try:
-                resp = httpx.get(self.base_url, params=params, timeout=self.timeout, follow_redirects=True)
+                resp = httpx.get(
+                    self.base_url, params=params, headers=headers, timeout=self.timeout, follow_redirects=True,
+                )
                 resp.raise_for_status()
                 return resp.text
+            except httpx.HTTPStatusError as exc:
+                last_exc = exc
+                wait = self._retry_delay(attempt, exc.response)
+                logger.warning("arxiv fetch attempt %d failed: %s (retrying in %.0fs)", attempt, exc, wait)
+                time.sleep(wait)
             except Exception as exc:  # noqa: BLE001
                 last_exc = exc
-                logger.warning("arxiv fetch attempt %d failed: %s", attempt, exc)
-                time.sleep(min(2 ** attempt, 8))
+                wait = self._retry_delay(attempt, None)
+                logger.warning("arxiv fetch attempt %d failed: %s (retrying in %.0fs)", attempt, exc, wait)
+                time.sleep(wait)
         raise CollectorError(f"arXiv fetch failed after retries: {last_exc}")
 
     @staticmethod
