@@ -10,9 +10,10 @@ looks for technology in *other* industries that could transfer to
 growth.
 
 This is a personal learning/research tool. It only ever touches public
-sources (arXiv, RSS, GitHub) or research material the user supplies
-directly — never a company network, company data, or confidential
-information.
+sources (arXiv, GitHub, RSS — international tech news/blogs and journals,
+plus Korean academic society notice boards KIIE/KSPHM) or research
+material the user supplies directly — never a company network, company
+data, or confidential information.
 
 ```
 Research -> Knowledge -> Insight -> Learning -> Experiment -> Skill Growth
@@ -117,9 +118,10 @@ attempt to the `llm_runs` table. Full detail: `docs/model-routing.md`.
 research-os init                          # create DB, seed taxonomies + skill tree
 research-os status                        # environment / DB / LLM / KG / skill summary
 research-os models                        # configured tiers + live availability
-research-os collect [--source arxiv|rss|github]
+research-os collect [--source arxiv|rss|github|kiie|ksphm]
 research-os classify / summarize / analyze / transfer   # run one pipeline stage
-research-os run [--no-llm]                # full pipeline: collect -> ... -> store
+research-os qa                            # grounding check over already-analyzed docs (flags, never blocks)
+research-os run [--no-llm]                # full pipeline: collect -> ... -> qa -> store
 research-os report daily [--no-llm]
 research-os report weekly [--no-llm]
 research-os research "topic" [--no-llm]   # deep research grounded in the local DB
@@ -158,14 +160,17 @@ pytest
 ruff check src tests
 ```
 
-79 tests cover configuration, schema/normalization, deduplication,
-scoring, the model router, the model gateway's fallback chain and response
-cache, the arXiv collector (mocked HTTP), the Ollama adapter's model/version
-discovery, every agent's non-LLM fallback path, the knowledge graph, the
-skill graph, the local LLM benchmark and scoring heuristics (mocked
-Ollama backend), the `config/models.yaml` auto-update, and a full offline
-pipeline integration test (collect → classify → summarize → analyze →
-transfer → store).
+150 tests cover configuration, schema/normalization, deduplication,
+scoring, the model router, the model gateway's fallback chain/response
+cache/circuit breaker, every collector (arXiv, RSS, GitHub, KIIE, KSPHM —
+all mocked HTTP, no live network in CI), the Ollama adapter's
+model/version discovery, every agent's non-LLM fallback path (including
+QAAgent's grounding heuristics and TrendAgent's period-over-period
+detection), the knowledge graph, the skill graph, the local LLM benchmark
+and scoring heuristics (mocked Ollama backend), the `config/models.yaml`
+auto-update, the DB schema auto-migration (adding a column to a
+pre-existing table), and a full offline pipeline integration test
+(collect → classify → summarize → analyze → transfer → qa → store).
 
 ## Troubleshooting
 
@@ -173,16 +178,21 @@ transfer → store).
 
 ## Roadmap
 
-- **Phase 1 (this build): working MVP** — arXiv collection, full pipeline,
+- **Phase 1: working MVP** ✅ — arXiv collection, full pipeline,
   ModelGateway/Router with local+cloud adapters and fallback, CLI, tests.
-- **Phase 2**: GitHub + RSS collectors are already implemented but
-  disabled by default (`config/system.yaml`); TrendAgent; richer daily/
-  weekly reports.
+- **Phase 2** ✅ — GitHub + RSS collectors enabled (international tech
+  news/blogs/journals + Korean 전자신문 + NVIDIA blog); KIIE/KSPHM Korean
+  academic-society collectors; TrendAgent (period-over-period
+  rising/new-technology detection); QAAgent (grounding check on generated
+  claims); provider circuit breaker (automatic cloud→local fallback on an
+  unrecoverable billing/auth failure, no manual config edit); richer
+  daily/weekly reports (QA Flags section).
 - **Phase 3**: Knowledge Graph expansion (Process/Equipment/Sensor/Signal
   nodes), Skill Graph recommendations, benchmark-driven ModelRouter.
 - **Phase 4**: Deeper multi-source Deep Research synthesis with tracked
   evidence chains.
-- **Phase 5**: Scheduled automation (Windows Task Scheduler) once manual
-  pipeline runs are stable.
+- **Phase 5**: Scheduled automation (Windows Task Scheduler) — draft plan
+  in `docs/automation.md`, not yet wired up on the target PC.
 - **Phase 6**: FastAPI + web UI, search, dashboards, graph visualization —
-  intentionally deferred; Phase 1 spends no time on UI.
+  intentionally deferred; a concrete proposal for what to build first is
+  in `docs/ui-proposal.md`.

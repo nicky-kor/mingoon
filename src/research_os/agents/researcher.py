@@ -10,7 +10,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from research_os.core.logging_setup import get_logger
-from research_os.database.models import Document
+from research_os.database.models import Document, Score
 from research_os.models.gateway import AllProvidersUnavailableError, ModelGateway
 
 logger = get_logger("agents.researcher")
@@ -44,7 +44,24 @@ class ResearchAgent:
             like = f"%{term}%"
             conditions.append(Document.title.ilike(like))
             conditions.append(Document.abstract.ilike(like))
-        stmt = select(Document).where(or_(*conditions)).limit(limit)
+        # Rank keyword matches by AnalystAgent's own quality score
+        # (overall_score) rather than arbitrary DB order, so a `limit`
+        # cutoff keeps the most credible matches, not just the first ones
+        # found. Prior art: OSS "deep research" agents (e.g. gpt-researcher,
+        # deep-research-agent) rank/weight sources by a credibility signal
+        # before synthesis rather than treating every match equally — we
+        # already compute that signal (AnalystAgent's evidence/practical/
+        # novelty scores feeding Score.overall_score), it just wasn't used
+        # here. Documents without a Score yet (not analyzed) sort last
+        # rather than being excluded.
+        stmt = (
+            select(Document)
+            .outerjoin(Score, Score.document_id == Document.id)
+            .where(or_(*conditions))
+            .order_by(Score.overall_score.desc().nulls_last())
+            .distinct()
+            .limit(limit)
+        )
         return list(session.scalars(stmt).all())
 
     def _format_sources(self, docs: list[Document]) -> str:

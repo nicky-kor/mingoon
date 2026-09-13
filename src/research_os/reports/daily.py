@@ -1,4 +1,13 @@
-"""Daily Industrial AI Briefing (spec section 37)."""
+"""Daily Industrial AI Briefing (spec section 37).
+
+Design principle carried through this whole file: every section except
+the Executive Summary is assembled directly from DB queries (facts).
+The LLM (via BriefingAgent) only ever writes that one summary paragraph,
+over facts this file already computed — it's never the source of a fact
+itself. If no LLM is configured, `executive_summary()` just returns the
+facts as a bullet list instead, so the report degrades gracefully rather
+than failing.
+"""
 from __future__ import annotations
 
 import datetime as dt

@@ -20,23 +20,43 @@ a tier, resolves it to a `(provider, model)` pair from `config/models.yaml`,
 and calls the matching `ProviderAdapter`. If that fails, the gateway walks
 the tier's fallback chain (also in `config/models.yaml`) before giving up.
 
+Before calling a tier's adapter, the gateway also checks
+`models/circuit_breaker.py`: if that provider recently failed for an
+unrecoverable reason (out of cloud credit, invalid API key), it's skipped
+straight to the next fallback tier for a cooldown period instead of
+repeating the same failing call — persisted in the DB (not in-memory)
+since every `research-os` invocation is a fresh process. This is what lets
+`config/routing.yaml` default reasoning-heavy agents to cloud (better
+quality) while still degrading to local automatically and reversibly the
+moment cloud actually fails, with no manual config edit either way.
+
 Every agent additionally implements a **deterministic, non-LLM fallback**
 (rule-based classification, heuristic extraction/scoring) so the pipeline
 never stops just because no model is configured — see
 `research_os/processing/classify.py` and `.../extraction.py`.
 
-## The Research Pipeline (Phase 1)
+## The Research Pipeline (Phase 1-2)
 
 ```
 COLLECT -> NORMALIZE -> DEDUPLICATE -> CLASSIFY -> SUMMARIZE -> ANALYZE
    (battery relevance + evidence/practical/novelty scores + SCORE)
--> TRANSFER ANALYSIS -> STORE -> (REPORT, on demand)
+-> TRANSFER ANALYSIS -> QA CHECK -> STORE -> (REPORT, on demand)
 ```
 
 Each stage is its own function in `research_os/research/pipeline.py` and
 its own CLI command (`collect`, `classify`, `summarize`, `analyze`,
-`transfer`), so any stage can be re-run independently against whatever is
-pending in the database. `research-os run` chains all of them.
+`transfer`, `qa`), so any stage can be re-run independently against
+whatever is pending in the database. `research-os run` chains all of
+them.
+
+QA CHECK (`agents/qa.py`) runs after transfer, before a document is
+marked analyzed: it's a deterministic grounding check (no LLM call of its
+own, by design — see the agent's own docstring for why) over what the
+LLM-backed stages produced, flagging generated claims (mainly
+percentage-style statistics) that don't appear in the document's own
+source text. It flags for later review; it never blocks a document from
+being scored and stored (spec section 44's "one document's issue must
+never stop the batch" applies here too).
 
 A failure processing one document (bad LLM response, parse error, network
 hiccup) is caught per-document; it's recorded on that document
