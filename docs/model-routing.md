@@ -47,7 +47,7 @@ data we haven't collected.
 | SummarizerAgent | local_standard |
 | AnalystAgent | cloud_reasoning |
 | TransferAgent | cloud_reasoning |
-| TrendAgent | local_standard |
+| TrendAgent | *(none — no LLM call; see agents/trend.py)* |
 | ResearchAgent | cloud_deep_research |
 | BriefingAgent | cloud_reasoning |
 

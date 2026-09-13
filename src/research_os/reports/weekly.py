@@ -66,7 +66,10 @@ def generate_weekly_report(session: Session, use_llm: bool = True) -> str:
     lines += [f"- {d.title} ({d.url})" for d, _ in scored if d.source_type == "github"][:10] or ["- None."]
 
     lines += ["", "## 9. Emerging Technologies"]
-    lines += [f"- {tech}" for tech, count in trend["top_technologies"] if count == 1][:5] or ["- Not enough data yet."]
+    emerging = [f"- {tech} (+{delta} vs previous {trend['window_days']}d)" for tech, delta in trend["rising_technologies"]]
+    seen = {tech for tech, _ in trend["rising_technologies"]}
+    emerging += [f"- {tech} (new this period)" for tech in trend["new_technologies"] if tech not in seen]
+    lines += emerging[:5] or ["- Not enough data yet."]
 
     lines += ["", "## 10. Recommended Reading"]
     lines += [f"- {d.title} ({d.url})" for d, s in scored if s and s.priority in ("Critical", "High")][:5] or ["- None flagged this week."]

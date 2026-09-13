@@ -56,3 +56,12 @@ def test_transfer_agent_produces_opportunity_for_other_industry():
     assert result is not None
     assert 0.0 <= result["transfer_confidence"] <= 100.0
     assert result["target_battery_process"]
+
+
+def test_transfer_agent_heuristic_reuses_classifiers_target_process():
+    # When ClassifierAgent already ran (the normal pipeline order), the
+    # heuristic must reuse its target_process rather than re-guessing from
+    # scratch, so the two agents never silently disagree on the same doc.
+    item = _sample_item(industry="steel", technology="fault_diagnosis", target_process="welding")
+    result = TransferAgent(gateway=None).analyze_transfer(item)
+    assert result["target_battery_process"] == "welding"
