@@ -119,19 +119,30 @@ class ModelGateway:
         reasoning_required: bool = False,
         use_cache: bool = True,
         measure_resources: bool = False,
+        force_tier: str | None = None,
     ) -> GenerationResult:
-        decision = self.router.route(
-            task_type=task_type,
-            complexity=complexity,
-            importance=importance,
-            latency_budget=latency_budget,
-            cost_budget=cost_budget,
-            privacy_level=privacy_level,
-            agent=agent,
-            reasoning_required=reasoning_required,
-        )
-
-        chain = [decision.tier] + self.router.fallback_chain(decision.tier)
+        if force_tier is not None:
+            # Bypass ModelRouter entirely and start the fallback chain at
+            # a specific tier, instead of whatever the agent's normal
+            # routing policy would pick. Used by models/cascade.py's
+            # cost-saving cascade (try a free local tier first, only fall
+            # through to the caller's normal — usually cloud — routing if
+            # that local answer doesn't hold up) — logging/caching below
+            # are unaffected, they still key off whichever tier actually
+            # answered.
+            chain = [force_tier] + self.router.fallback_chain(force_tier)
+        else:
+            decision = self.router.route(
+                task_type=task_type,
+                complexity=complexity,
+                importance=importance,
+                latency_budget=latency_budget,
+                cost_budget=cost_budget,
+                privacy_level=privacy_level,
+                agent=agent,
+                reasoning_required=reasoning_required,
+            )
+            chain = [decision.tier] + self.router.fallback_chain(decision.tier)
         request = GenerationRequest(prompt=prompt, system=system, max_tokens=max_tokens, temperature=temperature)
 
         last_error: Exception | None = None

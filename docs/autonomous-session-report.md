@@ -429,7 +429,7 @@ looking for missed items or over-engineering. Findings:
 
 ### Tests
 
-154 passing at the end of this round (up from 132 at Round 5), 0 failing,
+165 passing at the end of this round (up from 132 at Round 5), 0 failing,
 `ruff check` clean throughout. New coverage this round: circuit breaker
 (heuristic matching, trip/clear/cooldown, gateway integration proving a
 tripped provider is skipped without an adapter call), the 8-agent-review
@@ -439,9 +439,10 @@ pass, fabricated-percentage detection in two different fields, empty
 summary, generic-score detection), the DB auto-migration
 (pre-existing-table column addition), all four new/newly-enabled
 collectors (RSS's existing tests already covered the mechanism; KIIE/
-KSPHM got dedicated fixture-based tests from real page source), and
+KSPHM got dedicated fixture-based tests from real page source),
 ResearchAgent's score-based ranking (this agent had no tests at all
-before this round).
+before this round), and the cost-saving cascade (`test_grounding.py`,
+`test_cascade.py`, a `force_tier` gateway test).
 
 ### OSS survey: research-agent & model-routing patterns
 
@@ -464,14 +465,27 @@ in `docs/oss-research-notes.md`. No code copied from any of them.
   `config/models.yaml`'s own documented Phase-3 escalation extension
   point matches RouteLLM's core idea (classifier-based difficulty
   routing) — confirms the deferral was the right call, nothing to change.
-- **Flagged for the user's review, not implemented**: a FrugalGPT-style
-  cascade where QAAgent's grounding check triggers escalation from local
-  to cloud (try free local first, only pay for cloud if QA flags the
-  local answer) — a genuinely promising cost idea specific to this
-  project's own QAAgent, but it changes default routing again and QA's
-  check is percentage-specific (wouldn't catch every case a human would
-  call "insufficient"), so it needs a explicit decision rather than a
-  silent third routing-default change this session.
+- **Flagged for the user's review, then implemented on their explicit
+  go-ahead** ("품질은 동일하고 비용은 적게 든다면 진행"): a FrugalGPT-style
+  cascade where a grounding check triggers escalation from local to
+  cloud. Built as `core/grounding.py` (percentage-matching, shared with
+  `agents/qa.py`, refactored to use it — no behavior change there) +
+  `models/cascade.py` (`generate_with_cascade()`, plus a new
+  `force_tier` parameter on `ModelGateway.generate()` to bypass normal
+  routing for the cheap attempt) + wiring into all four reasoning-heavy
+  agents (Analyst/Transfer/Research/Briefing), each passing its own
+  source text as the grounding reference. Toggle:
+  `config/routing.yaml`'s `cost_cascade` block. The quality caveat was
+  stated plainly before implementing, not glossed over: passing the
+  grounding check means "no fabricated percentage," not "as good as
+  cloud" — `run_qa_check()` still runs the full check afterward on
+  whichever tier actually answered, regardless of which path this
+  cascade took, so the safety net stays in place either way. Verified
+  manually with fake local/cloud adapters (fresh DB per case, after an
+  initial false pass caused by the two test cases sharing an LLM-cache
+  key — a manual-test artifact, not a cascade bug): a clean local answer
+  skips the cloud adapter entirely; a fabricated-percentage local answer
+  correctly escalates and returns the cloud answer instead.
 
 ### What's still open (not started, or deliberately deferred)
 

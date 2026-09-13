@@ -110,7 +110,11 @@ adapters, ready for a key) — see `docs/model-routing.md`. Set the relevant
 `Agent -> ModelGateway -> ModelRouter -> ProviderAdapter`. The router picks
 a tier from task type/complexity/importance/privacy and the agent's default
 policy; the gateway walks a fallback chain (local → cloud) and logs every
-attempt to the `llm_runs` table. Full detail: `docs/model-routing.md`.
+attempt to the `llm_runs` table. For reasoning-heavy agents
+(`config/routing.yaml`'s `cost_cascade` block), the gateway also tries a
+free local tier first and only calls cloud if that answer doesn't ground
+cleanly against its own source text (`models/cascade.py`). Full detail:
+`docs/model-routing.md`, `docs/oss-research-notes.md`.
 
 ## CLI
 
@@ -160,13 +164,16 @@ pytest
 ruff check src tests
 ```
 
-150 tests cover configuration, schema/normalization, deduplication,
+165 tests cover configuration, schema/normalization, deduplication,
 scoring, the model router, the model gateway's fallback chain/response
-cache/circuit breaker, every collector (arXiv, RSS, GitHub, KIIE, KSPHM —
-all mocked HTTP, no live network in CI), the Ollama adapter's
-model/version discovery, every agent's non-LLM fallback path (including
-QAAgent's grounding heuristics and TrendAgent's period-over-period
-detection), the knowledge graph, the skill graph, the local LLM benchmark
+cache/circuit breaker/cost-saving cascade (try a free local tier first,
+escalate to cloud only if its answer doesn't ground cleanly against the
+source — see `docs/oss-research-notes.md`), every collector (arXiv, RSS,
+GitHub, KIIE, KSPHM — all mocked HTTP, no live network in CI), the Ollama
+adapter's model/version discovery, every agent's non-LLM fallback path
+(including QAAgent's grounding heuristics and TrendAgent's
+period-over-period detection), ResearchAgent's score-based result
+ranking, the knowledge graph, the skill graph, the local LLM benchmark
 and scoring heuristics (mocked Ollama backend), the `config/models.yaml`
 auto-update, the DB schema auto-migration (adding a column to a
 pre-existing table), and a full offline pipeline integration test

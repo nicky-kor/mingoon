@@ -10,9 +10,11 @@ import json
 import re
 
 from research_os.core.config import battery_config
+from research_os.core.grounding import unsupported_percentages
 from research_os.core.json_utils import extract_json
 from research_os.core.logging_setup import get_logger
 from research_os.core.schema import ResearchItem
+from research_os.models.cascade import generate_with_cascade
 from research_os.models.gateway import AllProvidersUnavailableError, ModelGateway
 
 logger = get_logger("agents.analyst")
@@ -87,8 +89,11 @@ class AnalystAgent:
                 industry=item.industry,
                 technology=item.technology,
             )
-            result = self.gateway.generate(
-                prompt=prompt,
+            source_text = f"{item.title} {item.abstract or ''}"
+            result, _ = generate_with_cascade(
+                self.gateway,
+                prompt,
+                is_acceptable=lambda text: not unsupported_percentages(text, source_text),
                 agent="AnalystAgent",
                 task_type="analysis",
                 complexity="high",

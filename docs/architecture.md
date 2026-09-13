@@ -30,6 +30,18 @@ since every `research-os` invocation is a fresh process. This is what lets
 quality) while still degrading to local automatically and reversibly the
 moment cloud actually fails, with no manual config edit either way.
 
+On top of that, `models/cascade.py` adds an opt-in cost-saving path for
+the agents listed in `config/routing.yaml`'s `cost_cascade` block
+(Analyst/Transfer/Research/Briefing by default): before calling the
+agent's normal (cloud) tier, try `local_reasoning` (free) first and keep
+that answer if it passes the calling agent's own grounding check
+(`core/grounding.py` — no percentage-style claim missing from the
+source text); otherwise fall through to the normal cloud call. This is
+NOT a full quality-equivalence guarantee (see the module's own
+docstring) — it's a deliberate cost/quality trade, kept honest by
+`run_qa_check()` still running the full QAAgent check afterward on
+whichever tier actually answered.
+
 Every agent additionally implements a **deterministic, non-LLM fallback**
 (rule-based classification, heuristic extraction/scoring) so the pipeline
 never stops just because no model is configured — see

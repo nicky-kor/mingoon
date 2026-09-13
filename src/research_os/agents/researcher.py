@@ -9,8 +9,10 @@ from __future__ import annotations
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from research_os.core.grounding import unsupported_percentages
 from research_os.core.logging_setup import get_logger
 from research_os.database.models import Document, Score
+from research_os.models.cascade import generate_with_cascade
 from research_os.models.gateway import AllProvidersUnavailableError, ModelGateway
 
 logger = get_logger("agents.researcher")
@@ -78,8 +80,10 @@ class ResearchAgent:
 
         if self.gateway is not None:
             try:
-                result = self.gateway.generate(
-                    prompt=_PROMPT_TEMPLATE.format(question=question, sources=sources_text),
+                result, _ = generate_with_cascade(
+                    self.gateway,
+                    _PROMPT_TEMPLATE.format(question=question, sources=sources_text),
+                    is_acceptable=lambda text: not unsupported_percentages(text, sources_text),
                     agent="ResearchAgent",
                     task_type="deep_research",
                     complexity="high",

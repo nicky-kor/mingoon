@@ -56,10 +56,38 @@ the design is sound, not that it was missed.
 |---|---|---|---|
 | **Adopt LiteLLM as the provider-call layer** (replace `models/anthropic.py`/`openai.py`/`google.py`/`local.py` with LiteLLM calls) | One dependency handles API-version drift across all providers (e.g. the Anthropic `temperature` signature break this session hit — LiteLLM's maintainers absorb that churn instead of us); built-in retries/load-balancing/cost-tracking for free | New external dependency for a component that's currently ~60 lines per adapter and stable; loses the exact control we have over `ModelUnavailableError` semantics (needed for the circuit breaker's unrecoverable-vs-transient distinction); `ModelRouter`'s policy layer (agent_defaults, task_type rules, privacy-forced-local) still has to be custom on top either way, so this only replaces the adapter layer, not the interesting part | **Skip for now.** Four adapters is not enough code to justify a new dependency; revisit only if a 5th+ provider is added and the adapter-writing itself becomes the bottleneck. |
 | **RouteLLM-style trained classifier for difficulty-based escalation** | Could reduce cloud spend further by sending genuinely-simple requests to `local_fast` even when the calling agent's default is a cloud tier | Needs training data (labeled prompt→ideal-tier pairs) this project doesn't have yet; `config/models.yaml`'s own `escalation` map already documents this as a deliberate Phase 3+ extension point, "not wired in automatically yet, to avoid routing on data we haven't collected" | **Already the plan, correctly deferred** — nothing to change now; this survey just confirms the documented Phase-3 direction matches the field's actual best practice, not just this project's guess. |
-| **FrugalGPT-style cascade: try local first, escalate to cloud only if the answer looks insufficient** | A genuinely new idea for this project specifically: **QAAgent's grounding check could double as the escalation trigger** — try `local_reasoning` first (free), run QAAgent's check on the result, and only re-run on `cloud_reasoning` if flagged. Could cut cloud spend substantially on the reasoning-heavy agents (Analyst/Transfer/Research/Briefing) that currently default straight to cloud. | Changes default routing again (third time this session, after the circuit-breaker revert) — needs the user's sign-off before flipping; QAAgent's check is percentage-specific today, so it wouldn't catch every case a human would consider "insufficient" (weak novelty reasoning with no numbers at all would pass QA cleanly but still be a worse answer than cloud would give); doubles LLM calls for any document QA flags, so it trades "always expensive" for "sometimes 2x calls," not obviously cheaper in every case. | **Worth a real proposal, not implemented.** Flagging for the user to weigh in on directly rather than silently changing routing defaults a third time. |
+| **FrugalGPT-style cascade: try local first, escalate to cloud only if the answer looks insufficient** | Cuts cloud spend on the reasoning-heavy agents (Analyst/Transfer/Research/Briefing) that used to default straight to cloud, on any document where the free local tier's answer already holds up. | Percentage-grounding is a narrower check than "as good as cloud" — a weak-but-fabrication-free local answer still gets kept. Doubles calls for any prompt that does get rejected. | **Implemented, at the user's explicit go-ahead** ("품질은 동일하고 비용은 적게 든다면 진행" — proceed if quality holds and cost drops), with the caveat above stated plainly rather than glossed over. See below. |
 
-## Net effect on the codebase
+## Net effect on the codebase (updated after implementation)
 
-Only the ResearchAgent ranking change went in (small, unambiguous
-improvement, no default-routing behavior changed). 154 tests pass after
-adding `test_researcher_agent.py`; `ruff check` clean.
+- `core/grounding.py`: the percentage-matching logic, shared by
+  `agents/qa.py` (unchanged behavior, just refactored to import it) and
+  the new cascade below.
+- `models/cascade.py`: `generate_with_cascade()` — tries
+  `local_reasoning` first when the calling agent is listed in
+  `config/routing.yaml`'s new `cost_cascade` block, keeps that answer if
+  `is_acceptable(text)` (the caller's grounding check) passes, otherwise
+  falls through to the agent's normal (cloud) routing.
+  `ModelGateway.generate()` gained a `force_tier` parameter to make the
+  "try this exact tier, bypassing the router" call possible.
+- Wired into `AnalystAgent`, `TransferAgent`, `ResearchAgent`,
+  `BriefingAgent` — each passes its own source text (document
+  title+abstract, matched sources, or the facts list) as the grounding
+  reference.
+- **Quality safety net kept in place, deliberately not removed**: the
+  `run_qa_check()` pipeline stage still runs on every stored document
+  regardless of which tier answered, so a document that slipped through
+  the cascade's lighter pre-check (percentages only, no generic-answer
+  detection) still gets the full QAAgent check afterward and can be
+  flagged for review.
+- Toggle: `config/routing.yaml`'s `cost_cascade.enabled` / `.agents` —
+  remove an agent from the list (or set `enabled: false`) to revert to
+  always calling the normal tier directly, no code change needed.
+- Verified manually end-to-end with fake local/cloud adapters: a clean
+  local answer skips the cloud adapter entirely (0 calls); a local
+  answer with a fabricated percentage not in the source correctly
+  escalates and returns the cloud answer instead.
+
+165 tests pass (154 → 165: `test_grounding.py`, `test_cascade.py`, a
+`force_tier` gateway test, plus the earlier `test_researcher_agent.py`);
+`ruff check` clean.

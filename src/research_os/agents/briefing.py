@@ -7,7 +7,9 @@ themselves.
 """
 from __future__ import annotations
 
+from research_os.core.grounding import unsupported_percentages
 from research_os.core.logging_setup import get_logger
+from research_os.models.cascade import generate_with_cascade
 from research_os.models.gateway import AllProvidersUnavailableError, ModelGateway
 
 logger = get_logger("agents.briefing")
@@ -27,8 +29,10 @@ class BriefingAgent:
         facts_text = "\n".join(f"- {f}" for f in facts) if facts else "- No new documents in this period."
         if self.gateway is not None:
             try:
-                result = self.gateway.generate(
-                    prompt=_PROMPT_TEMPLATE.format(facts=facts_text),
+                result, _ = generate_with_cascade(
+                    self.gateway,
+                    _PROMPT_TEMPLATE.format(facts=facts_text),
+                    is_acceptable=lambda text: not unsupported_percentages(text, facts_text),
                     agent="BriefingAgent",
                     task_type="briefing",
                     complexity="medium",
