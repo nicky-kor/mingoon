@@ -10,9 +10,11 @@ from __future__ import annotations
 import json
 
 from research_os.core.config import battery_config
+from research_os.core.grounding import unsupported_percentages
 from research_os.core.json_utils import extract_json
 from research_os.core.logging_setup import get_logger
 from research_os.core.schema import ResearchItem
+from research_os.models.cascade import generate_with_cascade
 from research_os.models.gateway import AllProvidersUnavailableError, ModelGateway
 from research_os.processing.classify import classify_battery_process
 
@@ -87,8 +89,11 @@ class TransferAgent:
                 abstract=(item.abstract or "")[:3000],
                 process_hint=process_hint,
             )
-            result = self.gateway.generate(
-                prompt=prompt,
+            source_text = f"{item.title} {item.abstract or ''}"
+            result, _ = generate_with_cascade(
+                self.gateway,
+                prompt,
+                is_acceptable=lambda text: not unsupported_percentages(text, source_text),
                 agent="TransferAgent",
                 task_type="transferability",
                 complexity="high",

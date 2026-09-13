@@ -1,4 +1,11 @@
-"""Weekly Industrial AI Briefing (spec section 38)."""
+"""Weekly Industrial AI Briefing (spec section 38).
+
+Same design principle as reports/daily.py: every section except the
+Executive Summary comes straight from DB queries/agent outputs already
+computed elsewhere (TrendAgent for section 5/9, TransferOpportunity rows
+for section 6, Score for priority/ranking, ...) — the LLM only writes
+that one summary paragraph over facts this file already assembled.
+"""
 from __future__ import annotations
 
 import datetime as dt

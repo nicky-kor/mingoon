@@ -250,3 +250,248 @@ matches"). `pytest`: 112/112 passing on the PC, 0 warnings.
 
 Full detail and the exact before/after numbers: `docs/local-llm.md`'s
 "Round 2" section.
+
+## Round 6: Cost-safety, agent review, QA, Korean sources, self-audit
+
+Chain of requests, same session: cloud credit ran out mid-testing → "check
+credit automatically, use local if none" → 8-agent overlap review → "build
+the QA agent you flagged but skipped" → "search out Korean academic
+societies and news/blogs too" → user stepped away, asked for a self-audit
++ continuity write-up + automation draft + UI proposal while unattended.
+
+### Provider circuit breaker (automatic cost safety, no manual toggle)
+
+`ANTHROPIC_API_KEY` ran out of credit mid-session. The first fix was a
+manual `config/routing.yaml` edit (reasoning agents → local tiers); the
+user explicitly asked for something that didn't require editing config by
+hand every time credit ran out or was topped up. Built:
+
+- `database/models.py`: new `ProviderCircuitBreaker` table
+  (provider/tripped_until/reason/tripped_at) — persisted, not in-memory,
+  since every `research-os` invocation is a fresh process.
+- `models/circuit_breaker.py`: `is_unrecoverable_failure()` recognizes
+  billing/auth error text (credit balance too low, insufficient_quota,
+  invalid api key, authentication_error) — deliberately NOT timeouts or
+  plain rate limits, which often resolve on the very next call.
+  `trip()`/`is_tripped()`/`clear()`/`list_active()` manage the row with a
+  1-hour default cooldown after which cloud is retried automatically.
+- `models/gateway.py`: checks the breaker before calling each tier's
+  adapter (skips a tripped provider without wasting a call) and trips it
+  on an unrecoverable `ModelUnavailableError`.
+- `config/routing.yaml` reverted to cloud-first defaults for reasoning
+  agents (better quality when usable); `config/models.yaml`'s fallback
+  chains extended so `cloud_reasoning`/`cloud_deep_research` both
+  eventually reach `local_reasoning` — without this the breaker would
+  skip past both cloud tiers (same provider) and never actually land on
+  a free local model.
+- **Verified live on the PC**: a real "credit balance is too low" error
+  tripped the breaker and the very next call skipped straight to local
+  with zero additional Anthropic calls.
+
+### 8-agent review: two real overlap/gap findings, fixed
+
+Reviewed all 8 agents' actual code (not just descriptions) for duplicated
+work and unmet responsibilities, at the user's request. Found and fixed:
+
+1. **TransferAgent re-derived what ClassifierAgent already computed.**
+   Both called `classify_battery_process(title, abstract)` independently
+   — nothing reconciled `doc.target_process` (Classifier) against
+   `doc.candidate_process` (Transfer), so they could silently disagree on
+   the same document. Fixed: TransferAgent now reuses `item.target_process`
+   when set, and passes it to the LLM as an anchor hint.
+2. **TrendAgent's stated purpose ("recurring/emerging technologies and
+   shifting research direction") wasn't actually implemented** — it only
+   counted one fixed window, so "emerging" had no real signal; the weekly
+   report approximated it with `count == 1`, which is wrong in both
+   directions. Fixed: real period-over-period comparison
+   (`rising_technologies`/`new_technologies` vs. the immediately
+   preceding window of the same length).
+   Also removed the dead `TrendAgent: local_standard` routing entry —
+   TrendAgent never calls `ModelGateway` at all (deterministic counts are
+   more trustworthy than an LLM here), so the config entry was misleading.
+
+No true duplicate agents found otherwise — the 8 (now 9) map cleanly to
+distinct pipeline stages. Noted but deliberately not touched: Briefing/
+Research agents share a similar "don't invent facts" prompt pattern
+(cosmetic duplication, not a functional bug).
+
+### QAAgent — the gap flagged above, built on request
+
+A 9th agent whose only job is catching the other LLM-backed agents
+inventing something not in the source text:
+
+- `agents/qa.py`: compares every percentage-style figure in a document's
+  generated fields (summary/limitations/expected_benefit/risk/
+  key_findings) against the percentages in its own title+abstract,
+  flagging anything unsupported. Also flags an empty summary and
+  evidence/practical/novelty scores that are all identically 0 or 100
+  (a common sign of a generic non-answer). Deliberately percentage-only,
+  not bare-number matching (years/counts would drown the signal), and
+  deliberately has no LLM call of its own (checking a hallucination with
+  a second LLM call trades one hallucination-prone step for two, at
+  double the cost, for no stronger guarantee). Flags, never blocks.
+- New `qa_status`/`qa_flags` columns on `Document`/`ResearchItem`, a
+  `run_qa_check()` pipeline stage between transfer and mark_analyzed, a
+  `research-os qa` CLI command, a "QA Flags" section in both reports, and
+  a QA-flagged count in `research-os status`.
+- **Building this surfaced a real, separate bug**: `_document_to_item()`
+  only ever round-tripped the handful of fields the classify stage
+  needed — `target_process`, `summary`, all the scores, etc. set by
+  earlier stages were silently `None` whenever a later stage (transfer,
+  and now qa) read them back from the DB in the real pipeline. This
+  meant the TransferAgent fix above never actually took effect end-to-end
+  despite passing its own unit test (which constructs `ResearchItem`
+  directly, bypassing the DB round-trip). Fixed by round-tripping every
+  generated field, not just the original subset.
+
+### A second real bug, found dogfooding on the PC: DB migration
+
+After pulling the QAAgent commit, `research-os run` against the PC's
+existing DB file crashed with `no such column: documents.qa_status`.
+`init_db()` only ever called `Base.metadata.create_all()`, which creates
+whole tables that don't exist yet (fine for the new
+`provider_circuit_breaker` table) but is a silent no-op for a column
+added to a table that already exists on disk. Fixed: `init_db()` now
+also inspects each pre-existing table and `ALTER TABLE ... ADD COLUMN`s
+anything the model declares that the live table is missing. This will
+keep mattering for every future column addition, not just this one.
+
+### Sources: RSS/GitHub enabled, Korean academic societies, news/blogs
+
+arXiv's own rate limiting (429, unrelated to any of this session's code)
+left the DB with nothing to test the pipeline against, prompting a wider
+push on sources:
+
+- `rss`/`github` flipped from disabled to enabled in `config/system.yaml`
+  — both were already fully implemented in Phase 1, just waiting for
+  real feed URLs/topics. RSS feeds added: MIT News AI, IEEE Spectrum AI,
+  ScienceDaily AI (all *news*, not journals — worth noting since the
+  user specifically asked why coverage looked papers-only), Nature
+  Machine Intelligence (journal), 전자신문 (Korean tech news), NVIDIA's
+  industrial/manufacturing blog tag feed (URL pattern inferred from a
+  confirmed sibling feed, not independently fetched — flag for PC-side
+  confirmation).
+- **Two new dedicated collectors for Korean academic societies that
+  publish no RSS**: `collectors/kiie.py` (대한산업공학회 — reads the
+  homepage's own "Announcements" widget rather than the full unconfirmed
+  ASP board) and `collectors/ksphm.py` (한국PHM학회 — scrapes the actual
+  `/info/notice.php` list page, handling its EUC-KR encoding, "YY.MM.DD"
+  dates, and a nested-table row structure that requires
+  `recursive=False` to avoid double-counting rows). Both built from real
+  page source the user pasted in (this sandbox has no general web
+  access — confirmed blocked even for google.com, so live fetching for
+  scraper-writing purposes had to route through the user pasting
+  view-source HTML, same as the earlier arXiv work routed through PC
+  dogfooding for anything needing real network access).
+- **KSMA (한국제조데이터인공지능학회)** — despite matching this project's
+  subject matter most directly of any candidate source, its `/notice`
+  page currently has zero posted items (confirmed by the user); skipped
+  for now, structure (Next.js + Supabase) already scoped for whenever it
+  has content.
+- Remaining candidates from a longer list the user provided (한국생산제조
+  학회, 한국경영과학회, 한국품질경영학회, 한국소음진동공학회, 대한기계학회,
+  제어·로봇·시스템학회, 대한전기학회, 한국정보과학회) are not yet started —
+  each would need the same "paste the real page source" treatment before
+  a working scraper could be written.
+
+### Self-audit (this round, unattended)
+
+Read through effectively the entire `src/research_os` tree end-to-end
+looking for missed items or over-engineering. Findings:
+- No correctness bugs beyond the two already fixed above.
+- `Source`, `DocumentTag`, `SkillEvidence`, `Report` DB tables are
+  defined but never read/written by any code path — this is intentional
+  documented pre-scaffolding ("later phases populate these," per
+  `database/models.py`'s own module docstring), not a bug. Worth
+  reconsidering now that `init_db()` auto-migrates columns (the original
+  "avoid migration churn" rationale for scaffolding tables this early is
+  weaker than it was), but not urgent.
+- Deliberate restraint confirmed as still appropriate, not
+  under-building: knowledge graph is SQLite-only rather than a graph DB
+  (spec section 61, "don't overengineer"); local inference targets only
+  Ollama, not llama.cpp/vLLM yet, both explicitly documented as
+  intentional rather than incomplete.
+- Fixed in passing: stale `cli.py` `--source` help text (didn't list
+  `kiie`/`ksphm`), README's roadmap (still described Phase 2 items as
+  future when they're done) and test count (79 → 150), cli.py import
+  ordering.
+- Wrote `docs/automation.md` (Windows Task Scheduler plan + script for
+  scheduled `research-os run`/`report daily`/`report weekly`, plus a
+  comparison of ways to actually see the weekly report without opening
+  the reports folder — synced cloud folder, email, Notion, Slack/Discord,
+  a published Claude Artifact, and — per the user's specific follow-up —
+  Naver Blog/Facebook/Instagram, ranked by setup effort vs. fit for this
+  content) and `docs/ui-proposal.md` (a Phase 6 dashboard plan: screens
+  in priority order — dashboard, document list/detail, Transfer Radar,
+  trends, skills, ad-hoc research — a recommended FastAPI-over-existing-
+  models stack, and an explicit "what not to build" section). Neither
+  changes running behavior; both are planning documents for later phases.
+
+### Tests
+
+165 passing at the end of this round (up from 132 at Round 5), 0 failing,
+`ruff check` clean throughout. New coverage this round: circuit breaker
+(heuristic matching, trip/clear/cooldown, gateway integration proving a
+tripped provider is skipped without an adapter call), the 8-agent-review
+fixes (TrendAgent rising/new-technology detection, TransferAgent
+target_process reuse through the real DB round-trip), QAAgent (clean
+pass, fabricated-percentage detection in two different fields, empty
+summary, generic-score detection), the DB auto-migration
+(pre-existing-table column addition), all four new/newly-enabled
+collectors (RSS's existing tests already covered the mechanism; KIIE/
+KSPHM got dedicated fixture-based tests from real page source),
+ResearchAgent's score-based ranking (this agent had no tests at all
+before this round), and the cost-saving cascade (`test_grounding.py`,
+`test_cascade.py`, a `force_tier` gateway test).
+
+### OSS survey: research-agent & model-routing patterns
+
+At the user's specific follow-up request ("리서치 관련 에이젼트는 github에도
+여러 엔지니어가 작업해놓을게 많을거야" / "search out useful model-routing
+patterns too"), surveyed comparable open-source projects — full writeup
+in `docs/oss-research-notes.md`. No code copied from any of them.
+
+- **Applied**: `ResearchAgent.search()` now ranks keyword matches by
+  `Score.overall_score` (AnalystAgent's own quality score) instead of
+  arbitrary DB order, matching a pattern common to gpt-researcher/
+  deep-research-agent (rank sources by a credibility signal before
+  synthesis) — we already compute that signal, it just wasn't wired into
+  the ordering. New `tests/test_researcher_agent.py` (this agent had no
+  dedicated tests before).
+- **Validated, not changed**: LiteLLM's "cooldown" feature is the same
+  pattern as this session's own circuit breaker — independent convergence
+  on the same idea as a 14k+-star project is a good sign, not something
+  to replace with a new dependency for just 4 provider adapters.
+  `config/models.yaml`'s own documented Phase-3 escalation extension
+  point matches RouteLLM's core idea (classifier-based difficulty
+  routing) — confirms the deferral was the right call, nothing to change.
+- **Flagged for the user's review, then implemented on their explicit
+  go-ahead** ("품질은 동일하고 비용은 적게 든다면 진행"): a FrugalGPT-style
+  cascade where a grounding check triggers escalation from local to
+  cloud. Built as `core/grounding.py` (percentage-matching, shared with
+  `agents/qa.py`, refactored to use it — no behavior change there) +
+  `models/cascade.py` (`generate_with_cascade()`, plus a new
+  `force_tier` parameter on `ModelGateway.generate()` to bypass normal
+  routing for the cheap attempt) + wiring into all four reasoning-heavy
+  agents (Analyst/Transfer/Research/Briefing), each passing its own
+  source text as the grounding reference. Toggle:
+  `config/routing.yaml`'s `cost_cascade` block. The quality caveat was
+  stated plainly before implementing, not glossed over: passing the
+  grounding check means "no fabricated percentage," not "as good as
+  cloud" — `run_qa_check()` still runs the full check afterward on
+  whichever tier actually answered, regardless of which path this
+  cascade took, so the safety net stays in place either way. Verified
+  manually with fake local/cloud adapters (fresh DB per case, after an
+  initial false pass caused by the two test cases sharing an LLM-cache
+  key — a manual-test artifact, not a cascade bug): a clean local answer
+  skips the cloud adapter entirely; a fabricated-percentage local answer
+  correctly escalates and returns the cloud answer instead.
+
+### What's still open (not started, or deliberately deferred)
+
+- 8 of the 10 Korean-society sources the user listed (see above).
+- Automation (`docs/automation.md`) and UI (`docs/ui-proposal.md`) are
+  plans, not implementations — nothing scheduled or built yet.
+- Weekly report sharing (email/Notion/blog/social) — not implemented,
+  pending a decision on which channel(s) actually matter.
+- NVIDIA blog feed URL not independently verified from this session.

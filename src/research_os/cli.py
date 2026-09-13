@@ -26,15 +26,14 @@ from research_os.evaluation.local_benchmark import (
     render_report as render_local_benchmark_report,
     run_local_benchmark,
 )
+from research_os.agents.researcher import ResearchAgent
 from research_os.knowledge.skills import LEVEL_LABELS, list_skills, seed_default_skills
 from research_os.models.anthropic import AnthropicAdapter
-from research_os.models.gateway import build_default_adapters
+from research_os.models.gateway import ModelGateway, build_default_adapters
 from research_os.models.local import OllamaAdapter
 from research_os.research import pipeline
 from research_os.reports.daily import write_daily_report
 from research_os.reports.weekly import write_weekly_report
-from research_os.agents.researcher import ResearchAgent
-from research_os.models.gateway import ModelGateway
 
 app = typer.Typer(help="Manufacturing AI Research OS — Personal Industrial AI Research & Skill OS")
 report_app = typer.Typer(help="Generate reports")
@@ -159,7 +158,7 @@ def models() -> None:
 
 
 @app.command()
-def collect(source: str = typer.Option(None, "--source", help="arxiv | rss | github")) -> None:
+def collect(source: str = typer.Option(None, "--source", help="arxiv | rss | github | kiie | ksphm")) -> None:
     """Run collectors (COLLECT -> NORMALIZE -> DEDUPLICATE -> STORE)."""
     setup_logging()
     init_db()

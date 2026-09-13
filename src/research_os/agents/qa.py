@@ -21,25 +21,26 @@ daily/weekly briefing) can spot-check the documents most likely to
 contain an overclaim, not to gate the pipeline on a heuristic that will
 always have false positives (a % figure can legitimately appear in a
 HYPOTHESIS/INFERENCE sentence without being copied from the source).
+
+The percentage-matching itself lives in `core/grounding.py`, shared with
+`models/cascade.py`'s lightweight pre-check on a cheap local answer — see
+that module for why the same check is useful at two different points.
 """
 from __future__ import annotations
 
-import re
-
+from research_os.core.grounding import unsupported_percentages
 from research_os.core.schema import ResearchItem
-
-_PERCENTAGE_PATTERN = re.compile(r"\d+(?:\.\d+)?\s?%")
 
 
 class QAAgent:
     def check(self, item: ResearchItem) -> dict:
         flags: list[str] = []
 
-        source_numbers = self._numbers(f"{item.title} {item.abstract or ''}")
+        source_text = f"{item.title} {item.abstract or ''}"
         generated_text = " ".join(
             filter(None, [item.summary, item.limitations, item.expected_benefit, item.risk, *(item.key_findings or [])])
         )
-        unsupported = sorted(self._numbers(generated_text) - source_numbers)
+        unsupported = unsupported_percentages(generated_text, source_text)
         if unsupported:
             flags.append(f"percentage claim(s) not found in source text: {', '.join(unsupported)}")
 
@@ -54,7 +55,3 @@ class QAAgent:
             "qa_status": "flagged" if flags else "passed",
             "qa_flags": flags,
         }
-
-    @staticmethod
-    def _numbers(text: str) -> set[str]:
-        return {m.group(0).replace(" ", "") for m in _PERCENTAGE_PATTERN.finditer(text or "")}

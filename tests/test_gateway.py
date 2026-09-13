@@ -106,6 +106,23 @@ def test_gateway_skips_tripped_provider_without_calling_its_adapter(isolated_db)
     assert anthropic_adapter.call_count == 0  # breaker skipped it before any call was made
 
 
+def test_force_tier_bypasses_normal_routing(isolated_db):
+    # AnalystAgent's normal routing (config/routing.yaml agent_defaults)
+    # picks cloud_reasoning/anthropic. force_tier should skip that
+    # entirely and go straight to the given tier's provider instead —
+    # used by models/cascade.py's cost-saving cascade.
+    gateway = ModelGateway(router=ModelRouter(), log_runs=True)
+    anthropic_adapter = AlwaysSucceedsAdapter()
+    local_adapter = AlwaysSucceedsAdapter()
+    gateway.register_adapter("anthropic", anthropic_adapter)
+    gateway.register_adapter("ollama", local_adapter)
+
+    gateway.generate(prompt="hello", agent="AnalystAgent", force_tier="local_reasoning")
+
+    assert local_adapter.call_count == 1
+    assert anthropic_adapter.call_count == 0
+
+
 def test_gateway_does_not_trip_breaker_on_transient_error(isolated_db):
     # A plain timeout/connection error must NOT trip the breaker — only
     # unrecoverable (billing/auth) failures should.

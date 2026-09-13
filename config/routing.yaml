@@ -45,6 +45,22 @@ rules:
 
 default_tier: local_fast
 
+# Cost-saving cascade (spec section 42, models/cascade.py): before an
+# agent listed here pays for its normal (usually cloud) tier above, it
+# first tries local_reasoning (free) and keeps that answer if it contains
+# no percentage-style claim missing from its own source text. This is a
+# deliberate cost/quality trade, not a strict equivalence guarantee — see
+# models/cascade.py's module docstring for exactly what "acceptable"
+# does and doesn't check. Remove an agent from `agents` (or set
+# `enabled: false`) to always call its normal tier directly, as before.
+cost_cascade:
+  enabled: true
+  agents:
+    - AnalystAgent
+    - TransferAgent
+    - ResearchAgent
+    - BriefingAgent
+
 budgets:
   latency_low_ms: 3000
   latency_high_ms: 30000
