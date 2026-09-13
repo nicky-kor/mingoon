@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from research_os.agents.analyst import AnalystAgent
 from research_os.agents.classifier import ClassifierAgent
 from research_os.agents.discovery import DiscoveryAgent
+from research_os.agents.qa import QAAgent
 from research_os.agents.summarizer import SummarizerAgent
 from research_os.agents.transfer import TransferAgent
 from research_os.core.logging_setup import get_logger
@@ -100,6 +101,12 @@ def _item_to_document(item: ResearchItem) -> Document:
 
 
 def _document_to_item(doc: Document) -> ResearchItem:
+    # Round-trips every field a later stage might need to read back, not
+    # just the ones the earliest (classify) stage needed — TransferAgent
+    # reads target_process from ClassifierAgent's output, and QAAgent reads
+    # summary/scores/key_findings from Summarizer/Analyst; leaving any of
+    # those out here would silently make the later stage see None for
+    # already-computed data instead of an actual DB round-trip.
     return ResearchItem(
         id=doc.external_id,
         title=doc.title,
@@ -115,7 +122,30 @@ def _document_to_item(doc: Document) -> ResearchItem:
         technology=doc.technology,
         problem=doc.problem,
         keywords=json.loads(doc.keywords) if doc.keywords else [],
+        summary=doc.summary,
+        battery_relevance=doc.battery_relevance,
+        target_process=doc.target_process,
+        target_equipment=doc.target_equipment,
+        key_findings=json.loads(doc.key_findings) if doc.key_findings else [],
+        limitations=doc.limitations,
+        evidence_score=doc.evidence_score,
+        practical_score=doc.practical_score,
+        novelty_score=doc.novelty_score,
+        transferability=doc.transferability,
+        candidate_process=doc.candidate_process,
+        candidate_equipment=doc.candidate_equipment,
+        expected_benefit=doc.expected_benefit,
+        implementation_difficulty=doc.implementation_difficulty,
+        risk=doc.risk,
+        research_questions=json.loads(doc.research_questions) if doc.research_questions else [],
+        knowledge_gaps=doc.knowledge_gaps,
+        related_items=json.loads(doc.related_items) if doc.related_items else [],
+        qa_status=doc.qa_status,
+        qa_flags=json.loads(doc.qa_flags) if doc.qa_flags else [],
         privacy_level=doc.privacy_level,
+        status=doc.status,
+        model_used=doc.model_used,
+        processing_status=doc.processing_status,
         doi=doc.doi,
         arxiv_id=doc.arxiv_id,
         github_url=doc.github_url,
@@ -295,6 +325,31 @@ def run_transfer(use_llm: bool = True, limit: int | None = None) -> PipelineStat
     return stats
 
 
+# ----------------------------------------------------------------------- QA --
+
+def run_qa_check(limit: int | None = None) -> PipelineStats:
+    """QA_CHECK (spec section 21/44 — grounding check, flags don't block):
+    runs after summarize/analyze/transfer, before STORE, so a flagged
+    document still reaches `mark_analyzed` like any other."""
+    stats = PipelineStats()
+    qa_agent = QAAgent()
+
+    def handler(doc: Document) -> None:
+        item = _document_to_item(doc)
+        result = qa_agent.check(item)
+        doc.qa_status = result["qa_status"]
+        doc.qa_flags = json.dumps(result["qa_flags"])
+
+    with session_scope() as session:
+        _iterate(
+            session,
+            lambda d: d.qa_status is None and d.summary is not None and d.evidence_score is not None,
+            limit, handler, stats,
+        )
+    logger.info("qa_check: processed=%d failed=%d", stats.processed, stats.failed)
+    return stats
+
+
 def mark_analyzed(session: Session | None = None) -> int:
     """Mark documents that have completed classify+summarize+analyze as
     status=analyzed (STORE stage, spec section 23), and fold them into the
@@ -326,6 +381,7 @@ def run_full_pipeline(source: str | None = None, use_llm: bool = True) -> dict[s
     summarize_stats = run_summarize(use_llm=use_llm)
     analyze_stats = run_analyze(use_llm=use_llm)
     transfer_stats = run_transfer(use_llm=use_llm)
+    qa_stats = run_qa_check()
     stored = mark_analyzed()
     return {
         "collect": collect_stats,
@@ -333,5 +389,6 @@ def run_full_pipeline(source: str | None = None, use_llm: bool = True) -> dict[s
         "summarize": summarize_stats,
         "analyze": analyze_stats,
         "transfer": transfer_stats,
+        "qa": qa_stats,
         "stored": stored,
     }

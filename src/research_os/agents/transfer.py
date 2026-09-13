@@ -22,6 +22,11 @@ _PROMPT_TEMPLATE = """You evaluate Cross-Industry Technology Transfer opportunit
 Manufacturing. Given a document from another industry, assess whether its technology could
 transfer to a battery manufacturing process/equipment.
 
+ClassifierAgent already matched this document's own text against the battery-process keyword
+taxonomy and landed on: {process_hint}. Use it as target_battery_process unless the text gives
+you a clearly better-justified target — the two should usually agree since they're reading the
+same document.
+
 Return ONLY a JSON object with keys:
 target_battery_process, target_equipment, expected_benefit, implementation_difficulty
 (one of: Low/Medium/High), risk, transfer_confidence (0-100 integer), research_question.
@@ -47,7 +52,11 @@ class TransferAgent:
         battery_terms = [t for terms in battery_config().get("keywords", {}).values() for t in terms]
         overlap = sum(1 for term in battery_terms if term.lower() in text)
         confidence = min(80.0, 20.0 + overlap * 10)
-        process = classify_battery_process(item.title, item.abstract) or "coating"
+        # Reuse ClassifierAgent's own determination when it already ran on
+        # this item (the normal pipeline order is classify -> ... ->
+        # transfer) instead of re-running the same keyword match here —
+        # avoids the two agents silently disagreeing on the same document.
+        process = item.target_process or classify_battery_process(item.title, item.abstract) or "coating"
         return {
             "target_battery_process": process,
             "target_equipment": None,
@@ -71,10 +80,12 @@ class TransferAgent:
         if self.gateway is None:
             return self._heuristic(item)
 
+        process_hint = item.target_process or classify_battery_process(item.title, item.abstract) or "unknown"
         try:
             prompt = _PROMPT_TEMPLATE.format(
                 industry=item.industry, technology=item.technology, title=item.title,
                 abstract=(item.abstract or "")[:3000],
+                process_hint=process_hint,
             )
             result = self.gateway.generate(
                 prompt=prompt,
@@ -89,6 +100,7 @@ class TransferAgent:
             parsed = extract_json(result.text)
             if parsed is None:
                 raise ValueError("No JSON object found in model output")
+            parsed.setdefault("target_battery_process", process_hint)
             parsed["model_used"] = f"{result.provider}:{result.model}"
             return parsed
         except (AllProvidersUnavailableError, json.JSONDecodeError, ValueError) as exc:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -71,6 +72,10 @@ def generate_daily_report(session: Session, use_llm: bool = True) -> str:
 
     lines += ["", "## Topics to Watch"]
     lines += [f"- {t}" for t in tech_set[:5]] or ["- N/A"]
+
+    lines += ["", "## QA Flags"]
+    flagged = [d for d, _ in top if d.qa_status == "flagged"]
+    lines += [f"- {d.title}: {'; '.join(json.loads(d.qa_flags))}" for d in flagged] or ["- No documents flagged today."]
 
     return "\n".join(lines) + "\n"
 
