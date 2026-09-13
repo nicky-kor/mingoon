@@ -4,20 +4,24 @@ from research_os.models.router import ModelRouter
 def test_agent_default_tier_used_when_no_rule_matches():
     router = ModelRouter()
     decision = router.route(agent="AnalystAgent")
-    assert decision.tier == "local_reasoning"
-    assert decision.provider == "ollama"
+    assert decision.tier == "cloud_reasoning"
+    assert decision.provider == "anthropic"
 
 
-def test_reasoning_heavy_call_routes_local_first_with_cloud_as_fallback_only():
+def test_reasoning_heavy_call_routes_cloud_with_local_as_eventual_fallback():
     # AnalystAgent/TransferAgent call gateway.generate(reasoning_required=True,
-    # importance>=70) — this must resolve to the free local tier by
-    # default (config/routing.yaml policy: local first, cloud only if
-    # local is unavailable), with cloud still reachable as this tier's
-    # fallback rather than gone entirely.
+    # importance>=70) — this resolves to cloud (better quality) by default,
+    # since ModelGateway's circuit breaker (models/circuit_breaker.py)
+    # automatically detects an unrecoverable cloud failure and skips to the
+    # local fallback for a cooldown, without any manual config edit. The
+    # fallback chain must still bottom out on a local tier so that skip has
+    # somewhere free to land, rather than dead-ending in more cloud tiers.
     router = ModelRouter()
     decision = router.route(agent="AnalystAgent", reasoning_required=True, importance=80)
-    assert decision.tier == "local_reasoning"
-    assert router.fallback_chain(decision.tier) == ["cloud_reasoning"]
+    assert decision.tier == "cloud_reasoning"
+    chain = router.fallback_chain(decision.tier)
+    assert chain[0] == "cloud_deep_research"
+    assert "local_reasoning" in chain
 
 
 def test_classification_low_complexity_routes_local_fast():

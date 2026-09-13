@@ -14,6 +14,7 @@ from research_os.core.logging_setup import get_logger
 from research_os.core.resource_probe import gpu_vram_usage_mb, process_ram_mb
 from research_os.database.db import session_scope
 from research_os.database.models import LLMRun
+from research_os.models import circuit_breaker
 from research_os.models.anthropic import AnthropicAdapter
 from research_os.models.base import GenerationRequest, GenerationResult, ModelUnavailableError, ProviderAdapter
 from research_os.models.cache import compute_cache_key, get_cached, store_cached
@@ -80,6 +81,28 @@ class ModelGateway:
         except Exception as exc:  # noqa: BLE001 - logging must never break the pipeline
             logger.warning("failed to log llm_run: %s", exc)
 
+    @staticmethod
+    def _breaker_tripped(provider: str):
+        # session_scope's sessionmaker uses expire_on_commit=False, so the
+        # already-loaded scalar columns on this row stay readable after
+        # the session closes below — no separate detachment step needed.
+        try:
+            with session_scope() as session:
+                return circuit_breaker.is_tripped(session, provider)
+        except Exception as exc:  # noqa: BLE001 - a broken check must never block generation
+            logger.warning("circuit breaker check failed for provider=%s: %s", provider, exc)
+            return None
+
+    @staticmethod
+    def _maybe_trip_breaker(provider: str, error_message: str) -> None:
+        if not circuit_breaker.is_unrecoverable_failure(error_message):
+            return
+        try:
+            with session_scope() as session:
+                circuit_breaker.trip(session, provider, reason=error_message)
+        except Exception as exc:  # noqa: BLE001 - tripping the breaker must never block generation
+            logger.warning("failed to trip circuit breaker for provider=%s: %s", provider, exc)
+
     def generate(
         self,
         prompt: str,
@@ -131,6 +154,16 @@ class ModelGateway:
                     self._log(agent, task_type, tier, model_name, provider_name, 0.0, cached, "cache_hit", None, cache_hit=True)
                     return cached
 
+            breaker = self._breaker_tripped(provider_name)
+            if breaker is not None:
+                logger.info(
+                    "tier=%s provider=%s skipped: circuit breaker tripped until %s (%s)",
+                    tier, provider_name, breaker.tripped_until, breaker.reason,
+                )
+                last_error = ModelUnavailableError(f"{provider_name} circuit breaker tripped: {breaker.reason}")
+                self._log(agent, task_type, tier, model_name, provider_name, 0.0, None, "breaker_open", str(last_error))
+                continue
+
             ram_before = process_ram_mb(provider_name) if measure_resources else None
             start = time.monotonic()
             try:
@@ -139,6 +172,7 @@ class ModelGateway:
                 latency_ms = (time.monotonic() - start) * 1000
                 logger.warning("tier=%s provider=%s model=%s unavailable: %s", tier, provider_name, model_name, exc)
                 self._log(agent, task_type, tier, model_name, provider_name, latency_ms, None, "fallback", str(exc))
+                self._maybe_trip_breaker(provider_name, str(exc))
                 last_error = exc
                 continue
 
