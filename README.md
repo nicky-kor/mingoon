@@ -11,9 +11,9 @@ growth.
 
 This is a personal learning/research tool. It only ever touches public
 sources (arXiv, GitHub, RSS — international tech news/blogs and journals,
-plus Korean academic society notice boards KIIE/KSPHM) or research
-material the user supplies directly — never a company network, company
-data, or confidential information.
+plus Korean academic society notice boards KIIE/KSPHM/KSMTE/KIEE/KSNVE) or
+research material the user supplies directly — never a company network,
+company data, or confidential information.
 
 ```
 Research -> Knowledge -> Insight -> Learning -> Experiment -> Skill Growth
@@ -122,7 +122,7 @@ cleanly against its own source text (`models/cascade.py`). Full detail:
 research-os init                          # create DB, seed taxonomies + skill tree
 research-os status                        # environment / DB / LLM / KG / skill summary
 research-os models                        # configured tiers + live availability
-research-os collect [--source arxiv|rss|github|kiie|ksphm]
+research-os collect [--source arxiv|rss|github|kiie|ksphm|ksmte|kiee|ksnve]
 research-os classify / summarize / analyze / transfer   # run one pipeline stage
 research-os qa                            # grounding check over already-analyzed docs (flags, never blocks)
 research-os run [--no-llm]                # full pipeline: collect -> ... -> qa -> store
@@ -164,12 +164,13 @@ pytest
 ruff check src tests
 ```
 
-165 tests cover configuration, schema/normalization, deduplication,
+172 tests cover configuration, schema/normalization, deduplication,
 scoring, the model router, the model gateway's fallback chain/response
 cache/circuit breaker/cost-saving cascade (try a free local tier first,
 escalate to cloud only if its answer doesn't ground cleanly against the
 source — see `docs/oss-research-notes.md`), every collector (arXiv, RSS,
-GitHub, KIIE, KSPHM — all mocked HTTP, no live network in CI), the Ollama
+GitHub, KIIE, KSPHM, KSMTE, KIEE, KSNVE — all mocked HTTP, no live network
+in CI), the Ollama
 adapter's model/version discovery, every agent's non-LLM fallback path
 (including QAAgent's grounding heuristics and TrendAgent's
 period-over-period detection), ResearchAgent's score-based result

@@ -4,6 +4,7 @@ from __future__ import annotations
 import typer
 from sqlalchemy import func, select
 
+from research_os.agents.researcher import ResearchAgent
 from research_os.core import env_info
 from research_os.core.config import industries_config, models_config, problems_config, technologies_config
 from research_os.core.logging_setup import get_logger, setup_logging
@@ -23,17 +24,18 @@ from research_os.evaluation.apply_config import apply_role_selection_to_models_y
 from research_os.evaluation.lab import render_report, run_evaluation
 from research_os.evaluation.local_benchmark import (
     derive_role_selection_from_db,
-    render_report as render_local_benchmark_report,
     run_local_benchmark,
 )
-from research_os.agents.researcher import ResearchAgent
+from research_os.evaluation.local_benchmark import (
+    render_report as render_local_benchmark_report,
+)
 from research_os.knowledge.skills import LEVEL_LABELS, list_skills, seed_default_skills
 from research_os.models.anthropic import AnthropicAdapter
 from research_os.models.gateway import ModelGateway, build_default_adapters
 from research_os.models.local import OllamaAdapter
-from research_os.research import pipeline
 from research_os.reports.daily import write_daily_report
 from research_os.reports.weekly import write_weekly_report
+from research_os.research import pipeline
 
 app = typer.Typer(help="Manufacturing AI Research OS — Personal Industrial AI Research & Skill OS")
 report_app = typer.Typer(help="Generate reports")
@@ -158,7 +160,9 @@ def models() -> None:
 
 
 @app.command()
-def collect(source: str = typer.Option(None, "--source", help="arxiv | rss | github | kiie | ksphm")) -> None:
+def collect(
+    source: str = typer.Option(None, "--source", help="arxiv | rss | github | kiie | ksphm | ksmte | kiee | ksnve")
+) -> None:
     """Run collectors (COLLECT -> NORMALIZE -> DEDUPLICATE -> STORE)."""
     setup_logging()
     init_db()

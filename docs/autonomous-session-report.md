@@ -495,3 +495,74 @@ in `docs/oss-research-notes.md`. No code copied from any of them.
 - Weekly report sharing (email/Notion/blog/social) — not implemented,
   pending a decision on which channel(s) actually matter.
 - NVIDIA blog feed URL not independently verified from this session.
+
+## Round 7: 3 more Korean-society collectors, real internet access this time
+
+This session ran on the user's actual PC (not the egress-blocked cloud
+sandbox Rounds 1-6 ran in), so — unlike every prior round's "paste the
+page source" workaround — collectors this round were built and verified
+against the real live sites directly, via `curl`/`WebFetch`/`WebSearch`.
+
+**Added, working, verified against live data:**
+
+- `collectors/ksmte.py` — 한국생산제조학회 (KSMTE). Old-style EUC-KR board
+  at `/bbs/index.kin?sub=1`, `?mode=view&uid=<id>` post links.
+- `collectors/board_cms.py` — one shared parser for **두 곳이 동일한 상용
+  게시판 CMS를 쓴다는 걸 실제 페이지 소스로 확인**: 대한전기학회(KIEE,
+  `kiee.or.kr`)와 한국소음진동공학회(KSNVE, `ksnve.or.kr`) — identical
+  `?_0000_method=view&ncode=<board>&num=<id>` link shape and CSS
+  scaffolding on both. `KIEECollector`/`KSNVECollector` are two one-line
+  subclasses of `BoardCMSCollector`. Deliberately parses by *role*
+  (find the title link, then scan the row's other cells for a
+  YYYY-MM-DD date) rather than by column position, since KIEE's table has
+  an extra "첨부" column KSNVE's doesn't.
+- All three registered in `agents/discovery.py`'s collector registry and
+  `config/system.yaml`'s `sources:` block (enabled by default), `--source`
+  help text updated in `cli.py`/README. Live run against the real sites at
+  the time of writing: KSMTE 38 items, KIEE 16 items, KSNVE 18 items — all
+  with correctly parsed titles/dates/external_ids.
+- Tests use HTML fixtures trimmed from the real page source actually
+  fetched this session (same convention as Round 6's KIIE/KSPHM tests),
+  covering pinned/공지 rows, numbered rows, an empty-attachment-cell vs. a
+  populated-one (KSNVE has a real PDF download link in that cell; KIEE's
+  fixture doesn't), network failure, and a redesigned/no-match page.
+  165 → **172 tests passing**, `ruff check` clean (including one
+  pre-existing unsorted-import lint fix to `cli.py`, unrelated to this
+  round's own changes, done in passing since the file was already open).
+
+**Investigated this round, not yet working (real findings, not guesses):**
+
+- **제어·로봇·시스템학회 (ICROS)** and **대한기계학회 (KSME)**: both run
+  the same legacy ASP `Board.asp?b_code=<id>&Action=content` system, but
+  that URL shape is the *individual post* link, not a list page — the
+  actual list endpoint wasn't found this round (ICROS's guessed board URL
+  404'd/500'd; KSME's main page is a `location.href` JS redirect stub that
+  needed following to `/main/`, which then only exposed the same
+  post-link pattern, not a list). Needs another pass specifically hunting
+  for the list-view URL (likely a sibling `Board_List.asp` or a `top_param`
+  value that renders a list rather than one `b_code`).
+- **한국정보과학회 (KIISE)**: the notice list is loaded client-side via a
+  JSON endpoint (`/academy/board/academynews.json`, POST). Confirmed real
+  (found the exact `jQuery.ajax` call in the page's own `<script>`), but
+  calling it directly — with and without first establishing a session
+  cookie from the list page — consistently returned `total_count: 0`
+  even though the static list page's own nav confirms the "학회소식" board
+  has real content. Something about the session/menu-state handshake
+  wasn't reproduced correctly; not attempted further this round.
+- **한국경영과학회 (KORMS)** and **한국품질경영학회 (KSQM)**: both serve a
+  generic "Error page" (a Metronic-themed admin-panel error template, not
+  a 404) for a plain unauthenticated GET to their notice board URL —
+  looks like a CSRF-token/session-gated CMS (both pages do issue a fresh
+  `_csrf` meta tag and `jsessionid`, suggesting the real board page needs
+  a token round-trip a bare GET doesn't do). Not investigated further this
+  round.
+- Remaining, per the original list, untouched: 한국경영과학회 and
+  한국품질경영학회 are covered just above; still fully unstarted are the
+  ones beyond the original 10 the user hadn't prioritized.
+
+Real conclusion, not glossed over: **3 of the remaining 8 Korean-society
+sources are done and verified live; 5 are investigated with concrete,
+specific blockers recorded above** (not "couldn't access the internet" —
+this round had real access — but genuine site-specific obstacles: wrong
+URL shape, session-bound AJAX, CSRF-gated CMS). Next session should pick
+up directly from the bullet points above rather than re-discovering them.

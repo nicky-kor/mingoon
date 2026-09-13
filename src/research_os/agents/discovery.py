@@ -4,8 +4,10 @@ from __future__ import annotations
 from typing import Any
 
 from research_os.collectors.arxiv import ArxivCollector
+from research_os.collectors.board_cms import KIEECollector, KSNVECollector
 from research_os.collectors.github import GitHubCollector
 from research_os.collectors.kiie import KIIECollector
+from research_os.collectors.ksmte import KSMTECollector
 from research_os.collectors.ksphm import KSPHMCollector
 from research_os.collectors.rss import RSSCollector
 from research_os.core.config import system_config
@@ -19,6 +21,9 @@ _COLLECTOR_REGISTRY = {
     "github": GitHubCollector,
     "ksphm": KSPHMCollector,
     "kiie": KIIECollector,
+    "ksmte": KSMTECollector,
+    "kiee": KIEECollector,
+    "ksnve": KSNVECollector,
 }
 
 

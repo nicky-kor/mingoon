@@ -67,7 +67,8 @@ sources:
       - "time series AI"
       - "agentic AI"
   # Korean academic societies (no RSS available -- old bulletin-board
-  # sites scraped directly, see collectors/ksphm.py and collectors/kiie.py).
+  # sites scraped directly, see collectors/ksphm.py, collectors/kiie.py,
+  # collectors/ksmte.py and collectors/board_cms.py (shared by kiee/ksnve).
   ksphm:
     enabled: true
     base_url: "https://www.phm.or.kr/info/notice.php"
@@ -75,6 +76,18 @@ sources:
   kiie:
     enabled: true
     base_url: "https://kiie.org/"
+  ksmte:
+    # 한국생산제조학회 (Korean Society of Manufacturing Technology Engineers)
+    enabled: true
+    base_url: "https://www.ksmte.kr/bbs/index.kin?sub=1"
+  kiee:
+    # 대한전기학회 (Korean Institute of Electrical Engineers)
+    enabled: true
+    base_url: "https://www.kiee.or.kr/board/?ncode=a001"
+  ksnve:
+    # 한국소음진동공학회 (Korean Society for Noise and Vibration Engineering)
+    enabled: true
+    base_url: "https://www.ksnve.or.kr/board/?ncode=a001"
 
 pipeline:
   stages:
