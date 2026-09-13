@@ -9,11 +9,20 @@ agent_defaults:
   DiscoveryAgent: local_fast
   ClassifierAgent: local_fast
   SummarizerAgent: local_standard
-  AnalystAgent: cloud_reasoning
-  TransferAgent: cloud_reasoning
+  # Reasoning-heavy agents default to local_reasoning rather than a cloud
+  # tier: the Local LLM Benchmark (docs/local-llm.md) confirmed
+  # qwen2.5:7b-instruct performs well on this project's actual tasks, and
+  # this keeps day-to-day use free (spec section 42: don't call an
+  # expensive model unnecessarily). This is a policy choice, not a fixed
+  # rule — the spec always documented the initial cloud_reasoning default
+  # as provisional, to be revisited once local models were benchmarked.
+  # Switch these back to a cloud_* tier (and set ANTHROPIC_API_KEY) once
+  # cloud quality/latency is worth the cost for your use case.
+  AnalystAgent: local_reasoning
+  TransferAgent: local_reasoning
   TrendAgent: local_standard
-  ResearchAgent: cloud_deep_research
-  BriefingAgent: cloud_reasoning
+  ResearchAgent: local_reasoning
+  BriefingAgent: local_reasoning
 
 # Routing rules evaluated in order; first match wins. `default_tier` is used
 # if nothing matches. Complexity/importance are 0-100 scales.
@@ -25,9 +34,9 @@ rules:
   - when: {task_type: "summarization", complexity: "medium"}
     tier: local_standard
   - when: {task_type: "deep_research"}
-    tier: cloud_deep_research
+    tier: local_reasoning
   - when: {reasoning_required: true, importance_gte: 70}
-    tier: cloud_reasoning
+    tier: local_reasoning
 
 default_tier: local_fast
 

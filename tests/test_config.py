@@ -52,5 +52,8 @@ def test_models_config_has_all_tiers():
 
 def test_routing_config_has_agent_defaults():
     agent_defaults = routing_config()["agent_defaults"]
-    assert agent_defaults["AnalystAgent"] == "cloud_reasoning"
+    # Reasoning-heavy agents default to local_reasoning (free) rather than
+    # a cloud tier — see the comment above agent_defaults in
+    # config/routing.yaml for why, and how to switch back to cloud.
+    assert agent_defaults["AnalystAgent"] == "local_reasoning"
     assert agent_defaults["ClassifierAgent"] == "local_fast"
