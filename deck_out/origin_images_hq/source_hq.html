@@ -10,16 +10,18 @@ body{background:#888;font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto San
 svg.sc{position:absolute;left:0;top:0}
 </style></head><body>
 <div id="defs"></div>
-<div class="img" id="i1"><div class="ttl">다윈의 비둘기: 달라 보여도 전부 같은 조상</div><div class="sub">『종의 기원』 1장 · 사육 재배하의 변이</div><svg class="sc" id="s1" width="1600" height="900"></svg>
+<div class="img" id="i0"><div class="ttl" style="top:40px;font-size:72px">『종의 기원』</div><div class="sub" style="top:132px">찰스 다윈 · 1859년 출간 · 진화와 생물다양성 연계 도서 소개</div><svg class="sc" id="s0" width="1600" height="900"></svg></div>
+<div class="img" id="i1"><div class="ttl">다윈의 비둘기: 달라 보여도 전부 같은 조상</div><div class="sub">찰스 다윈 『종의 기원』 1장 · 교과서 개념: 인위선택 → 자연선택, 공통 조상</div><svg class="sc" id="s1" width="1600" height="900"></svg>
 <div class="pr"><b>원리</b> &nbsp;사람이 원하는 형질만 골라 번식시켜도 이렇게 달라진다 → 자연이 수백만 년 골랐다면? (인위선택 → 자연선택)</div></div>
-<div class="img" id="i2"><div class="ttl">코끼리 한 쌍이 740년 뒤 1,900만 마리?</div><div class="sub">『종의 기원』 3장 · 생존 투쟁</div><svg class="sc" id="s2" width="1600" height="900"></svg>
+<div class="img" id="i2"><div class="ttl">코끼리 한 쌍이 740년 뒤 1,900만 마리?</div><div class="sub">찰스 다윈 『종의 기원』 3장 · 교과서 개념: 자연선택 (과잉 생산과 생존 경쟁)</div><svg class="sc" id="s2" width="1600" height="900"></svg>
 <div class="pr"><b>원리</b> &nbsp;태어나는 수가 살아남는 수보다 훨씬 많다 → 모든 생물은 경쟁하고 대부분은 살아남지 못한다</div></div>
-<div class="img" id="i3"><div class="ttl">클로버가 잘 자라려면 고양이가 필요하다?</div><div class="sub">『종의 기원』 3장 · 생물 사이의 얽힌 관계</div><svg class="sc" id="s3" width="1600" height="900"></svg>
-<div class="pr"><b>원리</b> &nbsp;생물은 서로 복잡하게 얽혀 있다 → 한 종이 바뀌면 생태계 전체가 영향을 받는다 (생물다양성)</div></div>
-<div class="img" id="i4"><div class="ttl">눈은 한 번에 생기지 않았다</div><div class="sub">『종의 기원』 6장 · 다윈이 스스로 인정한 난제</div><svg class="sc" id="s4" width="1600" height="900"></svg>
+<div class="img" id="i3"><div class="ttl">클로버가 잘 자라려면 고양이가 필요하다?</div><div class="sub">찰스 다윈 『종의 기원』 3장 · 교과서 개념: 생태계 구성 요소 사이의 상호작용</div><svg class="sc" id="s3" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;생물은 먹이 관계로 얽혀 있다 → 한 종의 변화가 다른 종에 영향을 준다 (생태계 평형)</div></div>
+<div class="img" id="i4"><div class="ttl">눈은 한 번에 생기지 않았다</div><div class="sub">찰스 다윈 『종의 기원』 6장 · 교과서 개념: 진화는 작은 변화가 쌓인 과정</div><svg class="sc" id="s4" width="1600" height="900"></svg>
 <div class="pr"><b>원리</b> &nbsp;다윈은 눈이 선택으로 생겼다는 말이 "터무니없어 보인다"고 고백했다. 하지만 작은 개선이 하나씩 쌓이면 정교한 기관도 만들어진다.</div></div>
-<div class="img" id="i5"><div class="ttl">섬에는 왜 개구리가 없을까?</div><div class="sub">『종의 기원』 12~13장 · 생물의 지리적 분포</div><svg class="sc" id="s5" width="1600" height="900"></svg>
+<div class="img" id="i5"><div class="ttl">섬에는 왜 개구리가 없을까?</div><div class="sub">찰스 다윈 『종의 기원』 12~13장 · 교과서 개념: 생물다양성과 분포</div><svg class="sc" id="s5" width="1600" height="900"></svg>
 <div class="pr"><b>원리</b> &nbsp;섬에는 바다를 건너올 수 있었던 생물만 도착했다 → 생물의 분포는 이동 능력과 환경, 그리고 공통 조상으로 설명된다</div></div>
+<div class="img" id="i6"><div class="ttl" style="font-size:52px;top:34px">종의 기원 한눈에 정리</div><div class="sub" style="top:108px">변이 → 생존 경쟁 → 자연선택 → 진화, 그리고 그 증거들</div><svg class="sc" id="s6" width="1600" height="900"></svg></div>
 <script src="icons.js"></script>
 <script>
 document.getElementById('defs').innerHTML=DEFS;
@@ -83,4 +85,50 @@ const arrow=(x1,y1,x2,y2,c=OR,w=5)=>{const a=Math.atan2(y2-y1,x2-x1),h=16;return
   s+=`<circle cx="${x+135}" cy="460" r="22" fill="${c.ok?OR:'#d63a63'}"/>`+T(x+135,469,c.ok?'✓':'✕',{s:28,c:'#fff',w:800});
   s+=T(x,640,c.t,{s:28,w:800})+T(x,668,c.d,{s:20,c:'#666',w:500})+T(x,692,c.d2,{s:20,c:'#666',w:500})});
  $('s5').innerHTML=s})();
+
+// 0 표지
+(function(){let s='';
+ // 생명의 나무
+ let seed=7;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+ const br=(x,y,len,ang,d)=>{if(d===0){s+=`<circle cx="${x}" cy="${y}" r="${9+rnd()*4}" fill="${['#E8590C','#1a1a1a','#8a8a8a','#F28C28'][Math.floor(rnd()*4)]}"/>`;return}
+  const x2=x+len*Math.sin(ang),y2=y-len*Math.cos(ang);s+=`<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="#1a1a1a" stroke-width="${d*2.2}" stroke-linecap="round"/>`;
+  br(x2,y2,len*(0.74+rnd()*0.08),ang-0.34-rnd()*0.16,d-1);br(x2,y2,len*(0.74+rnd()*0.08),ang+0.34+rnd()*0.16,d-1);};
+ s+=R(60,200,640,620,'#fff');br(380,770,150,0,6);
+ s+=T(380,800,'생명의 나무: 하나의 조상에서 갈라진 생물들',{s:22,c:'#666',w:600});
+ // 오른쪽
+ s+=R(740,200,800,620,'#F3F3F3');
+ s+=T(790,250,'이 책을 고른 이유 (과학 학습 관점)',{s:30,c:OR,w:800,a:'start'});
+ const why=[['교과서는 결론만, 책은 증거로','진화·자연선택 개념이 비둘기 사육, 코끼리 계산, 실험 같은 관찰과 증거에서 어떻게 나왔는지 볼 수 있다'],['개념을 사례로 심화','변이 · 생존 경쟁 · 자연선택 · 진화를 실제 생물 예시로 이해한다'],['지금 문제와 연결','항생제 내성균처럼 오늘 일어나는 자연선택을 설명할 수 있다']];
+ why.forEach((w,i)=>{const y=290+i*118;s+=`<circle cx="810" cy="${y+22}" r="22" fill="${OR}"/>`+T(810,y+31,String(i+1),{s:26,c:'#fff',w:800})+T(850,y+22,w[0],{s:27,w:800,a:'start'});
+  const words=w[1];const half=Math.ceil(words.length/2);let cut=words.lastIndexOf(' ',half+6);if(cut<0)cut=half;
+  s+=(words.length>40?T(850,y+56,words.slice(0,cut),{s:22,c:'#555',w:500,a:'start'})+T(850,y+84,words.slice(cut+1),{s:22,c:'#555',w:500,a:'start'}):T(850,y+56,words,{s:22,c:'#555',w:500,a:'start'}))});
+ s+=T(790,660,'관련 교과서 개념',{s:26,c:OR,w:800,a:'start'});
+ ['자연선택','진화','생물다양성','생태계 평형'].forEach((c,i)=>{const w=[150,110,150,160][i];const x=790+[0,170,300,470][i];s+=`<rect x="${x}" y="680" width="${w}" height="46" rx="23" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>`+T(x+w/2,711,c,{s:23,w:700})});
+ s+=T(790,780,'발표자: (이름)',{s:24,c:'#666',w:600,a:'start'});
+ $('s0').innerHTML=s})();
+
+// 6 총정리
+(function(){let s='';
+ const steps=[['변이','같은 종 안에도 형질이 조금씩 다르다'],['생존 경쟁','태어나는 수가 살아남는 수보다 많다'],['자연선택','유리한 형질이 더 많이 살아남는다'],['진화','유리한 형질이 쌓여 집단이 변한다']];
+ steps.forEach((e,i)=>{const x=60+i*381;s+=R(x,160,340,100,i===3?OR:'#fff',12);
+  s+=T(x+170,200,`${i+1}. ${e[0]}`,{s:30,w:800,c:i===3?'#fff':OR})+T(x+170,236,e[1],{s:19,c:i===3?'#fff':'#444',w:500});
+  if(i<3)s+=arrow(x+346,210,x+375,210,'#1a1a1a',4)});
+ // 표
+ s+=R(60,285,950,345,'#fff');
+ s+=T(80,320,'책 속 예시',{s:22,c:OR,w:800,a:'start'})+T(345,320,'알 수 있는 원리',{s:22,c:OR,w:800,a:'start'})+T(790,320,'교과서 개념',{s:22,c:OR,w:800,a:'start'});
+ const rows=[['비둘기 품종','사람이 고른 형질이 쌓여 품종이 달라짐','인위선택, 공통 조상',(x,y)=>pigeon(x,y,.2,{v:'rock'})],['코끼리 740년','태어나는 수 > 살아남는 수 → 경쟁','자연선택, 경쟁',(x,y)=>elephant(x,y,.15)],['클로버와 고양이','먹이 관계로 얽혀 서로 영향을 줌','생태계 상호작용',(x,y)=>cat(x,y,.27)],['눈의 5단계','작은 개선이 쌓여 복잡한 기관이 됨','진화(점진적 변화)',(x,y)=>`<g transform="translate(${x},${y}) scale(.25)">${eyeStage(4,0,0)}</g>`],['섬의 생물','건너올 수 있는 생물만 도착','생물다양성과 분포',(x,y)=>bat(x,y,.2)]];
+ rows.forEach((r,i)=>{const y=335+i*58;s+=`<line x1="75" y1="${y-6}" x2="995" y2="${y-6}" stroke="#ddd" stroke-width="2"/>`;
+  s+=r[3](118,y+28)+T(160,y+34,r[0],{s:21,w:800,a:'start'})+T(345,y+34,r[1],{s:19,c:'#333',w:500,a:'start'})+T(790,y+34,r[2],{s:18,c:'#111',w:700,a:'start'})});
+ // 오늘의 연결
+ s+=R(1030,285,510,345,'#F3F3F3');
+ s+=T(1285,322,'지금도 진행 중: 항생제 내성균',{s:25,c:OR,w:800});
+ ['세균 집단에 변이가 있다','항생제가 약한 균을 없앤다','내성균이 살아남아 증식한다','내성 집단으로 변한다'].forEach((t,i)=>{const y=345+i*54;s+=R(1065,y,440,40,'#fff',10)+T(1285,y+28,t,{s:21,w:700});if(i<3)s+=T(1285,y+53,'▼',{s:14,c:OR,w:800})});
+ s+=T(1285,610,'살충제 내성 해충, 서식지 파괴도 새로운 선택 압력',{s:17,c:'#555',w:500});
+ // 하단
+ s+=R(60,650,740,215,'#fff')+R(820,650,720,215,'#F3F3F3');
+ s+=T(85,685,'새롭게 알게 된 점',{s:25,c:OR,w:800,a:'start'});
+ ['진화는 개체가 노력해서 바뀌는 게 아니라,','집단 속 변이 중 환경에 유리한 것이 선택되어','쌓이는 과정이다. 다윈은 비둘기 사육과 계산,','실험으로 설득하고 약점도 스스로 인정했다.'].forEach((t,i)=>s+=T(85,722+i*34,t,{s:22,c:'#222',w:500,a:'start'}));
+ s+=T(845,685,'친구들에게 추천하는 이유',{s:25,c:OR,w:800,a:'start'});
+ ['① 교과서 진화 개념이 어떤 증거에서 나왔는지 알 수 있다','② 관찰 → 가설 → 증거 → 반론 대응의 과학적 사고를 배운다','③ 항생제 내성 같은 오늘의 문제를 이해하는 데 쓸 수 있다'].forEach((t,i)=>s+=T(845,726+i*44,t,{s:22,c:'#222',w:500,a:'start'}));
+ $('s6').innerHTML=s})();
 </script></body></html>
