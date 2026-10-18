@@ -1,0 +1,86 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>종의 기원 이미지 HQ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#888;font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:#111}
+.img{position:relative;width:1600px;height:900px;background:#fff;overflow:hidden;margin-bottom:20px}
+.ttl{position:absolute;left:0;right:0;top:44px;text-align:center;font-size:58px;font-weight:800}
+.sub{position:absolute;left:0;right:0;top:124px;text-align:center;font-size:28px;color:#E8590C;font-weight:700}
+.pr{position:absolute;left:80px;right:80px;bottom:40px;background:#F3F3F3;border:2px solid #1a1a1a;border-radius:12px;padding:20px 40px;font-size:28px;line-height:1.45}
+.pr b{color:#E8590C}
+svg.sc{position:absolute;left:0;top:0}
+</style></head><body>
+<div id="defs"></div>
+<div class="img" id="i1"><div class="ttl">다윈의 비둘기: 달라 보여도 전부 같은 조상</div><div class="sub">『종의 기원』 1장 · 사육 재배하의 변이</div><svg class="sc" id="s1" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;사람이 원하는 형질만 골라 번식시켜도 이렇게 달라진다 → 자연이 수백만 년 골랐다면? (인위선택 → 자연선택)</div></div>
+<div class="img" id="i2"><div class="ttl">코끼리 한 쌍이 740년 뒤 1,900만 마리?</div><div class="sub">『종의 기원』 3장 · 생존 투쟁</div><svg class="sc" id="s2" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;태어나는 수가 살아남는 수보다 훨씬 많다 → 모든 생물은 경쟁하고 대부분은 살아남지 못한다</div></div>
+<div class="img" id="i3"><div class="ttl">클로버가 잘 자라려면 고양이가 필요하다?</div><div class="sub">『종의 기원』 3장 · 생물 사이의 얽힌 관계</div><svg class="sc" id="s3" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;생물은 서로 복잡하게 얽혀 있다 → 한 종이 바뀌면 생태계 전체가 영향을 받는다 (생물다양성)</div></div>
+<div class="img" id="i4"><div class="ttl">눈은 한 번에 생기지 않았다</div><div class="sub">『종의 기원』 6장 · 다윈이 스스로 인정한 난제</div><svg class="sc" id="s4" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;다윈은 눈이 선택으로 생겼다는 말이 "터무니없어 보인다"고 고백했다. 하지만 작은 개선이 하나씩 쌓이면 정교한 기관도 만들어진다.</div></div>
+<div class="img" id="i5"><div class="ttl">섬에는 왜 개구리가 없을까?</div><div class="sub">『종의 기원』 12~13장 · 생물의 지리적 분포</div><svg class="sc" id="s5" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;섬에는 바다를 건너올 수 있었던 생물만 도착했다 → 생물의 분포는 이동 능력과 환경, 그리고 공통 조상으로 설명된다</div></div>
+<script src="icons.js"></script>
+<script>
+document.getElementById('defs').innerHTML=DEFS;
+const $=id=>document.getElementById(id);
+const OR='#E8590C';
+const T=(x,y,t,o={})=>`<text x="${x}" y="${y}" fill="${o.c||'#111'}" font-size="${o.s||26}" font-weight="${o.w||600}" text-anchor="${o.a||'middle'}" font-family="inherit">${t}</text>`;
+const R=(x,y,w,h,f,r=12,st='#1a1a1a')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" stroke="${st}" stroke-width="2"/>`;
+const arrow=(x1,y1,x2,y2,c=OR,w=5)=>{const a=Math.atan2(y2-y1,x2-x1),h=16;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/><polygon points="${x2},${y2} ${x2-h*Math.cos(a-0.5)},${y2-h*Math.sin(a-0.5)} ${x2-h*Math.cos(a+0.5)},${y2-h*Math.sin(a+0.5)}" fill="${c}"/>`};
+
+// 1 비둘기
+(function(){let s=R(60,190,1000,530,'#fff')+R(1090,190,450,530,'#F3F3F3');
+ s+=T(560,235,'야생 바위비둘기 (조상)',{s:28,c:OR,w:800})+pigeon(540,330,.85,{v:'rock'});
+ const bs=[{x:260,l:'팬테일',d:'꼬리 깃이 부채처럼',o:{v:'fan',fill:'url(#gWhite)',wing:'url(#gWhite)'}},{x:575,l:'파우터',d:'가슴을 크게 부풀림',o:{v:'pout',fill:'url(#gAmber)',wing:'url(#gAmber)'}},{x:880,l:'캐리어',d:'부리 혹과 눈 주위 살',o:{v:'carrier',fill:'url(#gPurple)',wing:'url(#gPurple)'}}];
+ bs.forEach(b=>{s+=arrow(560,420,b.x+20,478,OR,4)+pigeon(b.x,555,.7,b.o)+T(b.x+10,668,b.l,{s:28,w:800})+T(b.x+10,698,b.d,{s:21,c:'#666',w:500})});
+ s+=T(100,300,'사람이 원하는 형질만',{s:24,c:'#666',w:700,a:'start'})+T(100,332,'골라 번식시킨 결과',{s:24,c:'#666',w:700,a:'start'});
+ s+=T(1315,240,'결정적 증거: 격세유전',{s:30,c:OR,w:800})+pigeon(1200,350,.48,{v:'fan',fill:'url(#gWhite)',wing:'url(#gWhite)'})+T(1315,345,'×',{s:44,c:OR,w:800})+pigeon(1420,350,.48,{v:'carrier',fill:'url(#gPurple)',wing:'url(#gPurple)'});
+ s+=arrow(1315,400,1315,448,OR,5)+pigeon(1300,545,.72,{v:'rock'})+T(1315,658,'새끼가 야생 바위비둘기처럼',{s:24,w:700})+T(1315,690,'푸른 회색 + 날개 줄무늬로 되돌아감',{s:24,w:700});
+ $('s1').innerHTML=s})();
+
+// 2 코끼리
+(function(){let s=R(60,190,1480,300,'#fff')+R(60,510,1480,195,'#F3F3F3');
+ s+=T(270,240,'처음',{s:28,c:OR,w:800})+elephant(160,350,.46)+elephant(330,358,.4)+T(270,458,'1쌍 (2마리)',{s:26,w:700});
+ s+=arrow(470,340,800,340,OR,8)+T(635,310,'740~750년 뒤',{s:34,c:OR,w:800})+T(635,385,'30세부터 90세까지 새끼 6마리',{s:21,c:'#666',w:500})+T(635,412,'(다윈의 가정)',{s:21,c:'#666',w:500});
+ s+=T(1160,240,'계산 결과',{s:28,c:OR,w:800})+T(1160,370,'약 1,900만 마리',{s:80,c:OR,w:800})+T(1160,440,'가장 느리게 번식하는 코끼리가!',{s:26,w:600});
+ s+=T(800,552,'그런데 현실의 코끼리는 그렇게 늘지 않는다. 태어난 개체는 대부분 어디로 갔을까?',{s:28,w:800});
+ for(let r=0;r<2;r++)for(let c=0;c<22;c++){const keep=[3,15,27].includes(r*22+c);s+=`<circle cx="${160+c*58}" cy="${598+r*50}" r="17" fill="${keep?OR:'#dedede'}"/>`+(keep?'':`<text x="${160+c*58}" y="${606+r*50}" fill="#999" font-size="22" text-anchor="middle" font-weight="800">×</text>`)}
+ s+=T(800,690,'● 살아남아 번식   × 살아남지 못함',{s:20,c:'#666',w:500});
+ $('s2').innerHTML=s})();
+
+// 3 클로버·고양이
+(function(){let s=R(60,190,1480,330,'#fff')+R(60,545,1480,200,'#F3F3F3');
+ const xs=[220,590,960,1330];
+ s+=cat(xs[0],335,.92)+mouse(xs[1]-10,350,1.05)+bee(xs[2],345,1.0)+clover(xs[3],318,1.0);
+ ['고양이','들쥐','뒤영벌','붉은 클로버'].forEach((t,i)=>s+=T(xs[i],480,t,{s:30,w:800}));
+ const lab=['잡아먹는다','벌집을 부순다','꽃가루를 옮긴다'];
+ for(let i=0;i<3;i++){s+=arrow(xs[i]+110,335,xs[i+1]-120,335,OR,6)+T((xs[i]+xs[i+1])/2-5,272,lab[i],{s:23,c:OR,w:700})}
+ s+=T(800,596,'마을 근처에 고양이가 많으면?',{s:32,c:OR,w:800});
+ [['고양이','▲',OR],['들쥐','▼','#d63a63'],['뒤영벌','▲',OR],['클로버','▲',OR]].forEach((u,i)=>{const x=250+i*370;s+=R(x-130,625,260,90,'#fff',12)+T(x-30,683,u[0],{s:30,w:800})+T(x+75,684,u[1],{s:38,c:u[2],w:800});if(i<3)s+=T(x+185,684,'→',{s:36,c:'#666',w:800})});
+ $('s3').innerHTML=s})();
+
+// 4 눈
+(function(){let s='';
+ const st=[['① 빛을 느끼는 세포','밝고 어두움만 구별'],['② 오목해진 눈','빛이 오는 방향을 안다'],['③ 구멍 눈','작은 구멍으로 흐릿한 상'],['④ 투명한 막','보호하고 상이 더 밝아짐'],['⑤ 렌즈가 있는 눈','또렷한 상이 맺힘']];
+ st.forEach((e,i)=>{const cx=190+i*305;s+=R(cx-140,200,280,450,'#F3F3F3');s+=eyeStage(i,cx,i<2?470:455);s+=T(cx,590,e[0],{s:25,w:800})+T(cx,625,e[1],{s:20,c:'#666',w:500});if(i<4)s+=T(cx+152,430,'▶',{s:30,c:OR,w:800})});
+ s+=T(800,690,'주황 선 = 빛이 지나가는 길 · 단계마다 조금씩 나아지는 구조',{s:24,c:'#666',w:500});
+ $('s4').innerHTML=s})();
+
+// 5 섬
+(function(){let s=R(60,185,1480,215,'url(#gSky)');
+ s+=`<clipPath id="cp5"><rect x="62" y="187" width="1476" height="211" rx="11"/></clipPath><g clip-path="url(#cp5)">`;
+ s+=`<rect x="60" y="300" width="1480" height="100" fill="url(#gSea)"/>`;
+ s+=`<path d="M60,306 Q150,288 240,306 T420,306 T600,306 T780,306 T960,306 T1140,306 T1320,306 T1500,306" fill="none" stroke="#bfe0ff" stroke-width="4" opacity=".9"/><path d="M60,336 Q150,320 240,336 T420,336 T600,336 T780,336 T960,336 T1140,336 T1320,336 T1500,336" fill="none" stroke="#9cc8f0" stroke-width="3" opacity=".7"/>`;
+ // 대륙
+ s+=`<path d="M60,300 L60,232 Q130,205 210,236 Q280,258 330,300Z" fill="url(#gGreen)" stroke="#1f6b31" stroke-width="2"/><g stroke="#4a2f14" stroke-width="5"><path d="M130,250 L130,226 M180,256 L180,236"/></g><circle cx="130" cy="214" r="18" fill="#2f8f43"/><circle cx="180" cy="224" r="15" fill="#3aa356"/>`;
+ // 섬
+ s+=`<path d="M1040,306 C1070,262 1130,252 1180,258 C1240,254 1290,276 1320,306Z" fill="url(#gGreen)" stroke="#1f6b31" stroke-width="2"/><g transform="translate(0,24)"><path d="M1200,262 C1196,240 1194,222 1192,206" fill="none" stroke="#6b4020" stroke-width="7"/><g fill="#2f8f43" stroke="#1f6b31" stroke-width="2"><path d="M1192,208 C1160,196 1140,206 1130,222 C1156,210 1176,210 1192,208Z"/><path d="M1192,208 C1224,196 1246,206 1254,224 C1230,212 1208,210 1192,208Z"/><path d="M1192,208 C1180,184 1196,172 1214,170 C1204,184 1200,196 1192,208Z"/></g></g>`;
+ s+=`</g>`+T(160,282,'대륙',{s:26,w:800,c:'#fff'})+T(1262,298,'외딴 섬',{s:22,w:800,c:'#fff'});
+ s+=arrow(360,255,1010,255,OR,6)+T(690,232,'건너올 수 있었던 생물만 도착',{s:28,c:OR,w:800});
+ const cards=[{t:'식물 씨앗',d:'바닷물에 띄워 몇 주 뒤',d2:'싹이 트는지 실험',ok:1,i:(x)=>seed(x-8,545,.82)},{t:'오리 발의 달팽이',d:'새끼 달팽이가 붙은 채',d2:'살아서 옮겨질 수 있음',ok:1,i:(x)=>duckfoot(x-6,530,.78)},{t:'개구리 (양서류)',d:'알이 바닷물에서 죽는다',d2:'외딴 섬에는 거의 없음',ok:0,i:(x)=>frogegg(x,520,1.05)},{t:'박쥐',d:'날아서 바다를 건널 수 있어',d2:'섬에서도 발견됨',ok:1,i:(x)=>bat(x,518,.82)}];
+ cards.forEach((c,ci)=>{const x=235+ci*376.7;s+=R(x-175,420,350,285,'#F3F3F3')+c.i(x);
+  s+=`<circle cx="${x+135}" cy="460" r="22" fill="${c.ok?OR:'#d63a63'}"/>`+T(x+135,469,c.ok?'✓':'✕',{s:28,c:'#fff',w:800});
+  s+=T(x,640,c.t,{s:28,w:800})+T(x,668,c.d,{s:20,c:'#666',w:500})+T(x,692,c.d2,{s:20,c:'#666',w:500})});
+ $('s5').innerHTML=s})();
+</script></body></html>
