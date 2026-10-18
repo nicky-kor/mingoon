@@ -1,6 +1,6 @@
 // 고품질 벡터 일러스트 (그라디언트·음영·질감)
 const DEFS = `<svg width="0" height="0" style="position:absolute"><defs>
-<linearGradient id="gGray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9bcc4"/><stop offset="1" stop-color="#6f737d"/></linearGradient>
+<linearGradient id="gGray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9b98f"/><stop offset="1" stop-color="#b87444"/></linearGradient>
 <linearGradient id="gBlueGray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b7c3dc"/><stop offset="1" stop-color="#6e7fa4"/></linearGradient>
 <linearGradient id="gWhite" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd5e3"/></linearGradient>
 <linearGradient id="gOrange" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb877"/><stop offset="1" stop-color="#e2570c"/></linearGradient>
