@@ -1,0 +1,158 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>종의 기원 이미지</title>
+<style>
+:root{--bg:#0B1230;--card:#1B2559;--muted:#9AA4D6;--mint:#2EF2C0;--purple:#8B5CF6;--blue:#4C6FFF;--amber:#FFB84D;--pink:#FF6B8A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:#fff}
+.img{position:relative;width:1600px;height:900px;background:var(--bg);overflow:hidden;margin-bottom:20px}
+.ttl{position:absolute;left:80px;top:50px;font-size:56px;font-weight:800}
+.sub{position:absolute;left:80px;top:128px;font-size:28px;color:var(--mint);font-weight:700}
+.pr{position:absolute;left:80px;right:80px;bottom:40px;background:var(--card);border-radius:24px;padding:20px 40px;font-size:28px;line-height:1.45}
+.pr b{color:var(--amber)}
+svg{position:absolute;left:0;top:0}
+.tag{position:absolute;right:80px;top:62px;font-size:22px;color:var(--muted)}
+</style></head><body>
+<div class="img" id="i1"><div class="ttl">다윈의 비둘기: 달라 보여도 전부 같은 조상</div><div class="sub">『종의 기원』 1장 · 사육 재배하의 변이</div><div class="tag">1/5</div><svg id="s1" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;사람이 원하는 형질만 골라 번식시켜도 이렇게 달라진다 → 자연이 수백만 년 골랐다면? (인위선택 → 자연선택)</div></div>
+
+<div class="img" id="i2"><div class="ttl">코끼리 한 쌍이 740년 뒤 1,900만 마리?</div><div class="sub">『종의 기원』 3장 · 생존 투쟁</div><div class="tag">2/5</div><svg id="s2" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;태어나는 수가 살아남는 수보다 훨씬 많다 → 모든 생물은 끊임없이 경쟁하고, 대부분은 살아남지 못한다</div></div>
+
+<div class="img" id="i3"><div class="ttl">클로버가 잘 자라려면 고양이가 필요하다?</div><div class="sub">『종의 기원』 3장 · 생물 사이의 얽힌 관계</div><div class="tag">3/5</div><svg id="s3" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;생물은 서로 복잡하게 얽혀 있다 → 한 종이 바뀌면 생태계 전체가 영향을 받는다 (생물다양성)</div></div>
+
+<div class="img" id="i4"><div class="ttl">눈은 한 번에 생기지 않았다</div><div class="sub">『종의 기원』 6장 · 다윈이 스스로 인정한 난제</div><div class="tag">4/5</div><svg id="s4" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;다윈은 눈이 선택으로 생겼다는 말이 "터무니없어 보인다"고 고백했다. 하지만 작은 개선이 하나씩 쌓이면 정교한 기관도 만들어진다.</div></div>
+
+<div class="img" id="i5"><div class="ttl">섬에는 왜 개구리가 없을까?</div><div class="sub">『종의 기원』 12~13장 · 생물의 지리적 분포</div><div class="tag">5/5</div><svg id="s5" width="1600" height="900"></svg>
+<div class="pr"><b>원리</b> &nbsp;섬에는 바다를 건너올 수 있었던 생물만 도착했다 → 생물의 분포는 이동 능력과 환경, 그리고 공통 조상으로 설명된다</div></div>
+
+<script>
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+const T=(x,y,t,o={})=>`<text x="${x}" y="${y}" fill="${o.c||'#fff'}" font-size="${o.s||26}" font-weight="${o.w||600}" text-anchor="${o.a||'middle'}" font-family="inherit">${t}</text>`;
+const R=(x,y,w,h,f,r=20,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" ${extra}/>`;
+const arrow=(x1,y1,x2,y2,c='#2EF2C0',w=5)=>{const a=Math.atan2(y2-y1,x2-x1),h=16;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/><polygon points="${x2},${y2} ${x2-h*Math.cos(a-0.5)},${y2-h*Math.sin(a-0.5)} ${x2-h*Math.cos(a+0.5)},${y2-h*Math.sin(a+0.5)}" fill="${c}"/>`};
+
+// ---------- 비둘기 ----------
+function pigeon(x,y,s,o){
+  let g=`<g transform="translate(${x},${y}) scale(${s})">`;
+  if(o.fan){for(let i=-3;i<=3;i++)g+=`<ellipse cx="-70" cy="-10" rx="46" ry="12" fill="${o.col}" stroke="#0B1230" stroke-width="2" transform="rotate(${i*16-30} -50 0)"/>`}
+  else g+=`<polygon points="-45,-10 -105,-20 -105,20 -45,20" fill="${o.col}" stroke="#0B1230" stroke-width="2"/>`;
+  g+=`<ellipse cx="0" cy="0" rx="62" ry="40" fill="${o.col}" stroke="#0B1230" stroke-width="2"/>`;
+  if(o.pout)g+=`<circle cx="42" cy="-8" r="42" fill="${o.col2}" stroke="#0B1230" stroke-width="2"/>`;
+  if(o.bars)g+=`<path d="M-30 -22 L-8 12 M-8 -26 L14 8" stroke="#0B1230" stroke-width="7" stroke-linecap="round"/>`;
+  g+=`<circle cx="${o.pout?64:56}" cy="-38" r="20" fill="${o.col}" stroke="#0B1230" stroke-width="2"/>`;
+  g+=`<polygon points="${(o.pout?64:56)+17},-42 ${(o.pout?64:56)+42},-34 ${(o.pout?64:56)+17},-30" fill="#FFB84D"/>`;
+  if(o.wattle)g+=`<circle cx="${56+36}" cy="-42" r="9" fill="#fff"/><circle cx="${56+27}" cy="-50" r="7" fill="#fff"/><circle cx="56" cy="-38" r="26" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="3 6"/>`;
+  g+=`<circle cx="${(o.pout?64:56)+4}" cy="-42" r="4" fill="#0B1230"/>`;
+  g+=`<line x1="0" y1="40" x2="0" y2="66" stroke="#FFB84D" stroke-width="5"/><line x1="24" y1="38" x2="24" y2="66" stroke="#FFB84D" stroke-width="5"/></g>`;
+  return g;
+}
+(function(){
+  let s='';
+  s+=R(60,190,1000,520,'#10194a',28);
+  s+=T(560,240,'야생 바위비둘기 (조상)',{s:28,c:'#2EF2C0',w:800});
+  s+=pigeon(560,330,1.15,{col:'#8da2d8',bars:true});
+  const bs=[{x:230,l:'팬테일',d:'꼬리 깃이 부채처럼',o:{col:'#F2F4FF',fan:true}},{x:560,l:'파우터',d:'가슴을 크게 부풀림',o:{col:'#FFB84D',col2:'#ffd28a',pout:true}},{x:890,l:'캐리어',d:'부리 혹과 눈 주위 살',o:{col:'#B79BFF',wattle:true}}];
+  bs.forEach(b=>{s+=arrow(560,425,b.x,520,'#2EF2C0',4);s+=pigeon(b.x,575,1.0,b.o);s+=T(b.x,668,b.l,{s:28,w:800});s+=T(b.x,698,b.d,{s:21,c:'#9AA4D6',w:500})});
+  s+=T(100,300,'사람이 원하는 형질만',{s:24,c:'#9AA4D6',w:700,a:'start'});s+=T(100,332,'골라 번식시킨 결과',{s:24,c:'#9AA4D6',w:700,a:'start'});
+  // 격세유전
+  s+=R(1090,190,450,520,'#1B2559',28);
+  s+=T(1315,245,'결정적 증거: 격세유전',{s:30,c:'#FFB84D',w:800});
+  s+=pigeon(1195,360,0.7,{col:'#F2F4FF',fan:true});s+=T(1300,340,'×',{s:44,c:'#2EF2C0',w:800});s+=pigeon(1385,360,0.7,{col:'#B79BFF',wattle:true});
+  s+=arrow(1315,420,1315,480,'#2EF2C0',5);
+  s+=pigeon(1300,555,0.95,{col:'#8da2d8',bars:true});
+  s+=T(1315,650,'새끼가 야생 바위비둘기처럼',{s:24,w:700});s+=T(1315,684,'푸른 회색 + 날개 줄무늬로 되돌아감',{s:24,w:700});
+  $('s1').innerHTML=s;
+})();
+
+// ---------- 코끼리 ----------
+function elephant(x,y,s,col){
+  return `<g transform="translate(${x},${y}) scale(${s})" fill="${col}" stroke="#0B1230" stroke-width="3">
+  <rect x="-55" y="25" width="22" height="48" rx="8"/><rect x="-18" y="30" width="22" height="43" rx="8"/><rect x="22" y="30" width="22" height="43" rx="8"/><rect x="52" y="25" width="22" height="48" rx="8"/>
+  <ellipse cx="0" cy="0" rx="85" ry="52"/><circle cx="92" cy="-14" r="38"/>
+  <path d="M118 0 Q148 20 130 68" fill="none" stroke="${col}" stroke-width="18" stroke-linecap="round"/>
+  <ellipse cx="72" cy="-8" rx="22" ry="30" fill="${col}" opacity=".85"/><circle cx="104" cy="-24" r="5" fill="#0B1230" stroke="none"/>
+  <path d="M-85 -10 Q-110 10 -100 40" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round"/></g>`;
+}
+(function(){
+  let s='';
+  s+=R(60,190,1480,300,'#10194a',28);
+  s+=T(260,240,'처음',{s:28,c:'#2EF2C0',w:800});
+  s+=elephant(200,340,0.7,'#9AA4D6');s+=elephant(340,350,0.62,'#9AA4D6');
+  s+=T(270,455,'1쌍 (2마리)',{s:26,w:700});
+  s+=arrow(460,340,800,340,'#2EF2C0',8);
+  s+=T(630,310,'740~750년 뒤',{s:34,c:'#FFB84D',w:800});
+  s+=T(630,385,'30세부터 90세까지 새끼 6마리',{s:21,c:'#9AA4D6',w:500});s+=T(630,412,'(다윈의 가정)',{s:21,c:'#9AA4D6',w:500});
+  s+=T(1160,240,'계산 결과',{s:28,c:'#2EF2C0',w:800});
+  s+=T(1160,370,'약 1,900만 마리',{s:80,c:'#FFB84D',w:800});
+  s+=T(1160,440,'가장 느리게 번식하는 코끼리가!',{s:26,w:600});
+  // 현실
+  s+=R(60,510,1480,195,'#1B2559',28);
+  s+=T(800,552,'그런데 현실의 코끼리는 그렇게 늘지 않는다. 태어난 개체는 대부분 어디로 갔을까?',{s:28,w:800});
+  for(let r=0;r<2;r++)for(let c=0;c<22;c++){const idx=r*22+c;const keep=[3,15,27].includes(idx);
+    s+=`<circle cx="${160+c*58}" cy="${598+r*50}" r="17" fill="${keep?'#2EF2C0':'#3a4682'}"/>`+(keep?'':`<text x="${160+c*58}" y="${606+r*50}" fill="#6671a8" font-size="24" text-anchor="middle" font-weight="800">×</text>`)}
+  s+=T(800,690,'● 살아남아 번식   × 살아남지 못함',{s:20,c:'#9AA4D6',w:500});
+  $('s2').innerHTML=s;
+})();
+
+// ---------- 클로버·고양이 ----------
+function cat(x,y,s){return `<g transform="translate(${x},${y}) scale(${s})" stroke="#0B1230" stroke-width="3"><polygon points="-42,-20 -34,-62 -8,-34" fill="#FFB84D"/><polygon points="42,-20 34,-62 8,-34" fill="#FFB84D"/><circle r="46" fill="#FFB84D"/><circle cx="-16" cy="-6" r="6" fill="#0B1230" stroke="none"/><circle cx="16" cy="-6" r="6" fill="#0B1230" stroke="none"/><polygon points="-6,10 6,10 0,18" fill="#FF6B8A" stroke="none"/><path d="M-60 6 L-30 12 M-60 22 L-30 18 M60 6 L30 12 M60 22 L30 18" stroke="#fff" stroke-width="3"/></g>`}
+function mouse(x,y,s){return `<g transform="translate(${x},${y}) scale(${s})" stroke="#0B1230" stroke-width="3"><circle cx="-28" cy="-34" r="20" fill="#c5cbe8"/><circle cx="18" cy="-34" r="20" fill="#c5cbe8"/><ellipse cx="0" cy="0" rx="52" ry="40" fill="#9AA4D6"/><circle cx="-14" cy="-6" r="5" fill="#0B1230" stroke="none"/><circle cx="14" cy="-6" r="5" fill="#0B1230" stroke="none"/><circle cx="0" cy="12" r="6" fill="#FF6B8A" stroke="none"/><path d="M52 10 Q85 20 90 -10" fill="none" stroke="#c5cbe8" stroke-width="6"/></g>`}
+function bee(x,y,s){return `<g transform="translate(${x},${y}) scale(${s})" stroke="#0B1230" stroke-width="3"><ellipse cx="-14" cy="-38" rx="26" ry="16" fill="#E8ECFF" opacity=".9"/><ellipse cx="22" cy="-40" rx="26" ry="16" fill="#E8ECFF" opacity=".9"/><ellipse cx="0" cy="0" rx="52" ry="36" fill="#FFD23F"/><path d="M-14 -34 L-14 34 M12 -35 L12 35" stroke="#0B1230" stroke-width="12"/><circle cx="46" cy="-4" r="16" fill="#FFD23F"/><circle cx="52" cy="-8" r="4" fill="#0B1230" stroke="none"/></g>`}
+function clover(x,y,s){return `<g transform="translate(${x},${y}) scale(${s})" stroke="#0B1230" stroke-width="3"><line x1="0" y1="10" x2="0" y2="70" stroke="#2EF2C0" stroke-width="7"/><circle cx="-24" cy="-14" r="24" fill="#FF6B8A"/><circle cx="24" cy="-14" r="24" fill="#FF6B8A"/><circle cx="0" cy="-40" r="24" fill="#FF6B8A"/><circle cx="0" cy="-12" r="14" fill="#ff9db1"/></g>`}
+(function(){
+  let s=R(60,190,1480,330,'#10194a',28);
+  const xs=[220,590,960,1330];
+  s+=cat(xs[0],310,1.25);s+=mouse(xs[1],320,1.3);s+=bee(xs[2],315,1.4);s+=clover(xs[3],325,1.35);
+  ['고양이','들쥐','뒤영벌','붉은 클로버'].forEach((t,i)=>s+=T(xs[i],445,t,{s:30,w:800}));
+  const lab=['잡아먹는다','벌집을 부순다','꽃가루를 옮긴다'];
+  for(let i=0;i<3;i++){s+=arrow(xs[i]+105,320,xs[i+1]-105,320,'#2EF2C0',6);s+=T((xs[i]+xs[i+1])/2,285,lab[i],{s:23,c:'#FFB84D',w:700})}
+  s+=R(60,545,1480,200,'#1B2559',28);
+  s+=T(800,596,'마을 근처에 고양이가 많으면?',{s:32,c:'#2EF2C0',w:800});
+  const up=[['고양이','▲','#2EF2C0'],['들쥐','▼','#FF6B8A'],['뒤영벌','▲','#2EF2C0'],['클로버','▲','#2EF2C0']];
+  up.forEach((u,i)=>{const x=250+i*370;s+=R(x-130,625,260,90,'#0B1230',20);s+=T(x-30,683,u[0],{s:30,w:800});s+=T(x+75,684,u[1],{s:38,c:u[2],w:800});if(i<3)s+=T(x+185,684,'→',{s:36,c:'#9AA4D6',w:800})});
+  $('s3').innerHTML=s;
+})();
+
+// ---------- 눈 ----------
+(function(){
+  let s='';
+  const st=[
+   {t:'① 빛을 느끼는 세포',d:'밝고 어두움만 구별',p:(cx,cy)=>`<line x1="${cx-90}" y1="${cy}" x2="${cx+90}" y2="${cy}" stroke="#9AA4D6" stroke-width="12" stroke-linecap="round"/>`+[-70,-35,0,35,70].map(d=>`<circle cx="${cx+d}" cy="${cy-12}" r="7" fill="#2EF2C0"/>`).join('')},
+   {t:'② 오목해진 눈',d:'빛이 오는 방향을 안다',p:(cx,cy)=>`<path d="M${cx-90} ${cy-30} Q${cx} ${cy+50} ${cx+90} ${cy-30}" fill="none" stroke="#9AA4D6" stroke-width="12" stroke-linecap="round"/>`+[-55,-25,0,25,55].map((d,i)=>`<circle cx="${cx+d}" cy="${cy+(i%2?16:20)-Math.abs(d)*.18}" r="7" fill="#2EF2C0"/>`).join('')},
+   {t:'③ 구멍 눈',d:'작은 구멍으로 흐릿한 상',p:(cx,cy)=>`<path d="M${cx-30} ${cy-60} A70 70 0 1 0 ${cx+30} ${cy-60}" fill="none" stroke="#9AA4D6" stroke-width="12" stroke-linecap="round"/>`+[-50,-25,0,25,50].map(d=>`<circle cx="${cx+d}" cy="${cy+(70*Math.sqrt(1-(d/70)**2))-6}" r="7" fill="#2EF2C0"/>`).join('')},
+   {t:'④ 투명한 막',d:'보호하고 상이 더 밝아짐',p:(cx,cy)=>`<path d="M${cx-30} ${cy-60} A70 70 0 1 0 ${cx+30} ${cy-60}" fill="none" stroke="#9AA4D6" stroke-width="12" stroke-linecap="round"/><path d="M${cx-32} ${cy-60} Q${cx} ${cy-80} ${cx+32} ${cy-60}" fill="#4C6FFF" opacity=".6" stroke="#8da2ff" stroke-width="4"/>`+[-50,-25,0,25,50].map(d=>`<circle cx="${cx+d}" cy="${cy+(70*Math.sqrt(1-(d/70)**2))-6}" r="7" fill="#2EF2C0"/>`).join('')},
+   {t:'⑤ 렌즈가 있는 눈',d:'또렷한 상이 맺힘',p:(cx,cy)=>`<path d="M${cx-30} ${cy-60} A70 70 0 1 0 ${cx+30} ${cy-60}" fill="none" stroke="#9AA4D6" stroke-width="12" stroke-linecap="round"/><ellipse cx="${cx}" cy="${cy-58}" rx="34" ry="22" fill="#8da2ff" stroke="#E8ECFF" stroke-width="4"/>`+[-50,-25,0,25,50].map(d=>`<circle cx="${cx+d}" cy="${cy+(70*Math.sqrt(1-(d/70)**2))-6}" r="7" fill="#2EF2C0"/>`).join('')}
+  ];
+  st.forEach((e,i)=>{const cx=190+i*305;
+    s+=R(cx-140,200,280,450,'#1B2559',28);
+    s+=`<g stroke="#FFB84D" stroke-width="3" opacity=".8"><line x1="${cx-40}" y1="230" x2="${cx-40}" y2="300"/><line x1="${cx}" y1="230" x2="${cx}" y2="300"/><line x1="${cx+40}" y1="230" x2="${cx+40}" y2="300"/></g>`;
+    s+=`<g transform="translate(0,0)">`+e.p(cx,i==0?470:i==1?430:i<5?480:480)+`</g>`;
+    s+=T(cx,585,e.t,{s:25,w:800});s+=T(cx,622,e.d,{s:20,c:'#9AA4D6',w:500});
+    if(i<4)s+=T(cx+152,430,'▶',{s:34,c:'#2EF2C0',w:800});
+  });
+  s+=T(800,690,'빛이 닿는 방향(주황 선) → 단계마다 조금씩 나아지는 구조',{s:24,c:'#9AA4D6',w:500});
+  $('s4').innerHTML=s;
+})();
+
+// ---------- 섬 ----------
+function frogegg(x,y){let g='';[[0,0],[26,6],[-24,8],[12,-24],[-10,-22],[40,-12]].forEach(p=>g+=`<circle cx="${x+p[0]}" cy="${y+p[1]}" r="13" fill="#bfe8d4" stroke="#0B1230" stroke-width="3"/><circle cx="${x+p[0]}" cy="${y+p[1]}" r="4" fill="#0B1230"/>`);return g}
+(function(){
+  let s=R(60,185,1480,215,'#10194a',28)+'<g transform="translate(0,-35)">';
+  s+=`<rect x="60" y="330" width="1480" height="105" fill="#1d3b8a" opacity=".85"/><path d="M60 345 Q150 320 240 345 T420 345 T600 345 T780 345 T960 345 T1140 345 T1320 345 T1500 345" fill="none" stroke="#6b8cff" stroke-width="4"/>`;
+  s+=`<path d="M60 330 L60 260 Q180 235 280 270 L330 330 Z" fill="#3b7a5a"/>`+T(160,300,'대륙',{s:26,w:800});
+  s+=`<ellipse cx="1180" cy="330" rx="150" ry="52" fill="#3b7a5a"/>`+T(1180,326,'외딴 섬',{s:26,w:800});
+  s+=arrow(350,290,1010,290,'#FFB84D',6)+T(680,262,'건너올 수 있었던 생물만 도착',{s:28,c:'#FFB84D',w:800})+'</g>';
+  const cards=[
+   {x:190,t:'식물 씨앗',d:'바닷물에 띄워 몇 주 뒤',d2:'싹이 트는지 실험',ok:true,i:`<ellipse cx="190" cy="605" rx="30" ry="40" fill="#8a5a2b" stroke="#0B1230" stroke-width="3"/><path d="M190 560 Q190 525 215 515" fill="none" stroke="#2EF2C0" stroke-width="7" stroke-linecap="round"/><ellipse cx="222" cy="515" rx="18" ry="10" fill="#2EF2C0"/>`},
+   {x:570,t:'오리 발의 달팽이',d:'새끼 달팽이가 붙은 채',d2:'살아서 옮겨질 수 있음',ok:true,i:`<path d="M520 650 L570 560 L620 650 Q570 668 520 650Z" fill="#FFB84D" stroke="#0B1230" stroke-width="3"/><circle cx="570" cy="590" r="14" fill="#c5cbe8" stroke="#0B1230" stroke-width="3"/><path d="M570 590 m-7 0 a7 7 0 1 1 7 7" fill="none" stroke="#0B1230" stroke-width="3"/>`},
+   {x:950,t:'개구리 (양서류)',d:'알이 바닷물에서 죽는다',d2:'외딴 섬에는 거의 없음',ok:false,i:frogegg(950,605)},
+   {x:1330,t:'박쥐',d:'날아서 바다를 건널 수 있어',d2:'섬에서도 발견됨',ok:true,i:`<path d="M1330 600 Q1290 540 1240 565 Q1262 590 1250 620 Q1285 605 1305 640 Q1330 615 1330 650 Q1330 615 1355 640 Q1375 605 1410 620 Q1398 590 1420 565 Q1370 540 1330 600Z" fill="#8B5CF6" stroke="#0B1230" stroke-width="3"/>`}
+  ];
+  cards.forEach((c,ci)=>{s+=`<g transform="translate(${[45,41.7,38.3,35][ci]},0)">`;s+=R(c.x-175,420,350,285,'#1B2559',28);s+='<g transform="translate(0,-50)">'+c.i+'</g>';
+    s+=T(c.x,630,c.t,{s:28,w:800});s+=T(c.x,662,c.d,{s:20,c:'#9AA4D6',w:500});s+=T(c.x,688,c.d2,{s:20,c:'#9AA4D6',w:500});
+    s+=`<circle cx="${c.x+135}" cy="460" r="22" fill="${c.ok?'#2EF2C0':'#FF6B8A'}"/>`+T(c.x+135,469,c.ok?'✓':'✕',{s:28,c:'#0B1230',w:800})+'</g>';});
+  $('s5').innerHTML=s;
+})();
+</script></body></html>
